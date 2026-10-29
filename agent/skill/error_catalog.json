@@ -1,0 +1,165 @@
+{
+  "_note": "Known failures seen while deploying local LLMs. read_logs matches 'patterns' (case-insensitive regex) against the learner's error text. Every 'fix' must be safe for a standard user: no admin, nothing deleted, nothing over budget. Add new entries as the team hits real errors.",
+  "errors": [
+    {
+      "id": "pip_package_typo",
+      "title": "pip can't find the package (usually a typo)",
+      "patterns": ["No matching distribution found for", "Could not find a version that satisfies the requirement"],
+      "cause": "The package name in the pip command is misspelled, or it doesn't exist for your Python version.",
+      "fix": ["Compare the package name letter by letter with the tutorial (e.g. huggingface_hub, psutil).", "Re-run: python3 -m pip install --user <exact-name>"],
+      "learn": "pip"
+    },
+    {
+      "id": "pip_permission_denied",
+      "title": "pip tried to write to a protected system folder",
+      "patterns": ["\\[Errno 13\\] Permission denied", "Could not install packages due to an OSError", "Defaulting to user installation because normal site-packages is not writeable"],
+      "cause": "pip tried to install into the system-wide Python, which only an administrator can change.",
+      "fix": ["Install for your user only: python3 -m pip install --user <package>", "Or make a virtual environment: python3 -m venv .venv, then activate it and install there."],
+      "learn": "admin_rights"
+    },
+    {
+      "id": "externally_managed_env",
+      "title": "Python is 'externally managed' (Homebrew/system Python)",
+      "patterns": ["externally-managed-environment"],
+      "cause": "Your Python belongs to the operating system or Homebrew, so pip refuses to change it.",
+      "fix": ["Create a project environment: python3 -m venv .venv", "Activate it (macOS: source .venv/bin/activate · Windows: .venv\\Scripts\\activate) and run pip install again."],
+      "learn": "pip"
+    },
+    {
+      "id": "python_not_found",
+      "title": "The 'python' command isn't found",
+      "patterns": ["'python' is not recognized", "python: command not found", "command not found: python", "Python was not found"],
+      "cause": "Python isn't installed, or it's installed under a different command name.",
+      "fix": ["macOS: try python3 instead of python.", "Windows: try the launcher: py --version. If neither works, install Python from python.org with 'Install for current user' (no admin)."],
+      "learn": "python_path"
+    },
+    {
+      "id": "runtime_not_found",
+      "title": "The LLM runtime command isn't found",
+      "patterns": ["llama-server: command not found", "'llama-server' is not recognized", "command not found: llama-server", "command not found: ollama", "'ollama' is not recognized"],
+      "cause": "The terminal can't find the runtime program. It's not on your PATH, or you're in a different folder.",
+      "fix": ["cd into the folder where you unzipped llama.cpp and run it with ./llama-server (macOS) or .\\llama-server.exe (Windows).", "If you use Ollama, open the Ollama app once, then open a new terminal window."],
+      "learn": "runtime"
+    },
+    {
+      "id": "macos_gatekeeper",
+      "title": "macOS blocked an unsigned download",
+      "patterns": ["cannot be opened because the developer cannot be verified", "cannot be opened because it is from an unidentified developer", "\"llama-server\" Not Opened"],
+      "cause": "macOS quarantines programs downloaded from the internet until you approve them.",
+      "fix": ["In Finder, Control-click the file → Open → Open, once.", "Or remove the quarantine flag on that one file you downloaded: xattr -d com.apple.quarantine ./llama-server"],
+      "learn": "runtime"
+    },
+    {
+      "id": "windows_script_policy",
+      "title": "PowerShell won't run activation scripts",
+      "patterns": ["running scripts is disabled on this system", "cannot be loaded because running scripts is disabled"],
+      "cause": "PowerShell's execution policy blocks .ps1 scripts like the venv activate script.",
+      "fix": ["Use Command Prompt (cmd) instead and run .venv\\Scripts\\activate.bat", "Or allow your own user to run local scripts: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"],
+      "learn": "admin_rights"
+    },
+    {
+      "id": "port_in_use",
+      "title": "The server port is already taken",
+      "patterns": ["address already in use", "Only one usage of each socket address", "\\[Errno 48\\]", "\\[Errno 98\\]", "couldn't bind"],
+      "cause": "Another program (often a second copy of the model server) is already using that port.",
+      "fix": ["Check whether a model server is already running; if so, just use it.", "Or start on a different port: ./llama-server -m <model.gguf> --port 8081, then set AGENT_BASE_URL=http://localhost:8081/v1"],
+      "learn": "ports_servers"
+    },
+    {
+      "id": "server_not_running",
+      "title": "Nothing is listening at the server address",
+      "patterns": ["Connection refused", "actively refused it", "Failed to establish a new connection", "ECONNREFUSED", "Could not reach http"],
+      "cause": "The model server isn't running, or it's on a different port than the dashboard expects.",
+      "fix": ["Start the server in its own terminal window and leave it open (Ollama: open the app; llama.cpp: ./llama-server -m <model.gguf>).", "Check that the port in AGENT_BASE_URL matches the one the server printed."],
+      "learn": "ports_servers"
+    },
+    {
+      "id": "model_file_not_found",
+      "title": "The model file path is wrong",
+      "patterns": ["No such file or directory.*\\.gguf", "failed to open .*\\.gguf", "unable to load model", "model file not found", "error loading model: failed to open"],
+      "cause": "The -m path doesn't point to the .gguf file, often because of a typo or a different working folder.",
+      "fix": ["List your models folder (macOS: ls models · Windows: dir models) and copy the exact file name.", "Use the full path in -m, e.g. -m ./models/qwen2.5-1.5b-instruct-q4_k_m.gguf"],
+      "learn": "gguf"
+    },
+    {
+      "id": "corrupt_or_partial_gguf",
+      "title": "The model file is incomplete or not a GGUF",
+      "patterns": ["invalid magic", "not a valid GGUF", "gguf_init_from_file.*failed", "unexpected end of file", "tensor data is not within the file bounds"],
+      "cause": "The download stopped early, or the file is a different format (e.g. a .safetensors file renamed).",
+      "fix": ["Compare the file size with the size listed on the model page.", "Download it again to the same path so the incomplete file is overwritten. Make sure the name ends in .gguf."],
+      "learn": "gguf"
+    },
+    {
+      "id": "out_of_memory",
+      "title": "Not enough RAM for this model",
+      "patterns": ["out of memory", "failed to allocate", "cannot allocate memory", "std::bad_alloc", "requires more system memory", "insufficient memory"],
+      "cause": "The model plus its context needs more free RAM than your laptop has right now.",
+      "fix": ["Close big apps (browsers with many tabs, video calls) and retry.", "Pick a smaller model or quantization: ask the agent to run recommend_model.", "Lower the context size, e.g. -c 2048."],
+      "learn": "ram_vs_model_size"
+    },
+    {
+      "id": "disk_full",
+      "title": "The disk is full",
+      "patterns": ["No space left on device", "There is not enough space on the disk", "ENOSPC"],
+      "cause": "There isn't enough free disk space to finish the download or install.",
+      "fix": ["Check free space and stay within the 10 GB project budget.", "Choose a smaller model from the allow-list instead (most are under 2 GB). Free up space yourself in Finder or File Explorer if you want to; the agent won't delete files."],
+      "learn": "disk_budget"
+    },
+    {
+      "id": "hf_gated_model",
+      "title": "The model requires accepting a license",
+      "patterns": ["GatedRepoError", "401 Client Error", "Access to model .* is restricted", "You must have access to it and be authenticated", "is gated"],
+      "cause": "This model's publisher (e.g. Meta or Google) requires you to accept their license before downloading.",
+      "fix": ["Easiest: choose an ungated model from the allow-list (Qwen 2.5 or Phi 3.5).", "Or accept the license on the model page, then run hf auth login and paste your token into that prompt only. Never paste the token into the chat."],
+      "learn": "gated_models"
+    },
+    {
+      "id": "hf_not_found",
+      "title": "The repository or file name is wrong",
+      "patterns": ["RepositoryNotFoundError", "EntryNotFoundError", "404 Client Error", "Repository Not Found", "Entry Not Found"],
+      "cause": "The repo or file name in the download command doesn't exactly match what's on Hugging Face (names are case-sensitive).",
+      "fix": ["Copy the repo and file name from the allow-list or the model page; don't retype them.", "Check upper/lower case, e.g. Qwen/Qwen2.5-1.5B-Instruct-GGUF"],
+      "learn": "gguf"
+    },
+    {
+      "id": "ollama_model_missing",
+      "title": "Ollama doesn't have that model yet",
+      "patterns": ["not found, try pulling it first", "pull model manifest: file does not exist", "model .* not found"],
+      "cause": "The model tag isn't downloaded, or the tag name is misspelled.",
+      "fix": ["Download it with the exact tag from the allow-list, e.g. ollama pull qwen2.5:1.5b", "Check what you have with: ollama list"],
+      "learn": "runtime"
+    },
+    {
+      "id": "context_too_long",
+      "title": "The prompt is longer than the model's context window",
+      "patterns": ["exceeds the available context size", "context length exceeded", "prompt is too long", "maximum context length"],
+      "cause": "The prompt plus the answer don't fit in the context window you started the model with.",
+      "fix": ["Shorten the prompt, or start the server with a larger context (e.g. -c 4096) if you have free RAM.", "Remember: a bigger context uses more RAM."],
+      "learn": "context_window"
+    },
+    {
+      "id": "ssl_certificate",
+      "title": "Python can't verify HTTPS certificates",
+      "patterns": ["CERTIFICATE_VERIFY_FAILED", "SSL: CERTIFICATE_VERIFY_FAILED", "certificate verify failed"],
+      "cause": "Python's certificate bundle is missing (common with python.org installs on macOS) or a network proxy is intercepting traffic.",
+      "fix": ["macOS python.org installs: open Applications → Python 3.x → run 'Install Certificates.command'.", "Try a different network (e.g. not a captive Wi-Fi). Don't turn off certificate checking."],
+      "learn": "network"
+    },
+    {
+      "id": "network_timeout",
+      "title": "The download timed out or DNS failed",
+      "patterns": ["Read timed out", "ConnectTimeout", "Temporary failure in name resolution", "getaddrinfo failed", "Max retries exceeded"],
+      "cause": "The network connection dropped or is too slow for the download.",
+      "fix": ["Check your internet connection and run the same command again; most downloaders resume.", "Large files download faster on a wired or campus network."],
+      "learn": "network"
+    },
+    {
+      "id": "wrong_cpu_architecture",
+      "title": "You downloaded the build for a different CPU",
+      "patterns": ["bad CPU type in executable", "exec format error", "is not a valid Win32 application", "This app can't run on your PC"],
+      "cause": "The runtime you downloaded was built for another processor (e.g. x64 vs Apple Silicon arm64).",
+      "fix": ["Run check_hardware to see your CPU architecture.", "Download the matching release: macOS Apple Silicon → arm64; Intel Mac → x64; most Windows laptops → win-x64 (cpu or vulkan build)."],
+      "learn": "cpu_architecture"
+    }
+  ]
+}
