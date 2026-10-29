@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+models/*
+!models/.gitkeep
+# each person's measurements stay local; share them with the dashboard's upload button
+results/*
+!results/.gitkeep
+.DS_Store

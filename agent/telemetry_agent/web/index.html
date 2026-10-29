@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local AI Lab</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo" aria-hidden="true"></span>Local AI Lab<span class="sub">Team 14</span></div>
+  <nav class="tabs" aria-label="Sections">
+    <button data-goto="learn" class="active">Learn</button>
+    <button data-goto="deploy">Deploy</button>
+    <button data-goto="predict">Predict &amp; Run</button>
+    <button data-goto="results">Results</button>
+  </nav>
+  <div id="pill" class="pill">Connecting…</div>
+</header>
+
+<div id="no-token" class="banner" hidden>
+  This page needs the Lab Helper. Double-click <strong>Start Lab Helper</strong> in the lab folder; it opens the lab for you.
+</div>
+
+<main class="layout">
+  <section class="content">
+
+    <div id="view-learn" class="view">
+      <p class="eyebrow">No terminal needed</p>
+      <h1>Run an AI model on your own laptop</h1>
+      <p class="lead">The lab assistant checks your laptop, picks a model that fits what you want to do, and walks you through each step. You approve every step, and you see exactly what it does.</p>
+      <div class="cards3">
+        <div class="card"><h3>Private</h3><p>The model runs on this laptop. Your questions never leave it.</p></div>
+        <div class="card"><h3>You're in control</h3><p>Nothing runs until you click Approve. No admin password, ever.</p></div>
+        <div class="card"><h3>You learn how it works</h3><p>Each step shows the terminal command it replaces, so it's never a black box.</p></div>
+      </div>
+      <h2>Five ideas you'll see</h2>
+      <dl class="terms">
+        <dt>Parameters (e.g. 3B)</dt><dd>The model's learned numbers. More parameters usually means better answers, but a bigger, slower model.</dd>
+        <dt>Quantization (Q4)</dt><dd>Storing each number in about 4 bits instead of 16, so the file is roughly 4 times smaller with a small quality cost.</dd>
+        <dt>RAM</dt><dd>The model must fit in your free memory while it runs. If it doesn't fit, it crashes or crawls.</dd>
+        <dt>Tokens per second</dt><dd>How fast it writes. A token is about three quarters of a word; people read about 5 per second.</dd>
+        <dt>Time to first token</dt><dd>How long you wait before the first word appears. Longer prompts make it longer.</dd>
+      </dl>
+      <button class="btn primary big" data-goto="deploy">Start: check my laptop</button>
+    </div>
+
+    <div id="view-deploy" class="view" hidden>
+      <h1>Deploy a model</h1>
+      <ol class="stages">
+        <li class="stage" id="stage-laptop"><h2><span class="n">1</span>Your laptop</h2><div id="laptop-body"></div></li>
+        <li class="stage locked" id="stage-goal"><h2><span class="n">2</span>What do you want to use it for?</h2><div id="goals" class="goals"></div></li>
+        <li class="stage locked" id="stage-model"><h2><span class="n">3</span>Your model</h2><div id="model-body"><p class="muted">Pick a goal first.</p></div></li>
+        <li class="stage locked" id="stage-steps"><h2><span class="n">4</span>Set it up</h2><div id="steps-body"><p class="muted">Pick a model first.</p></div></li>
+        <li class="stage locked" id="stage-try"><h2><span class="n">5</span>Try it</h2><div id="try-body"><p class="muted">Finish setup first.</p></div></li>
+      </ol>
+    </div>
+
+    <div id="view-predict" class="view" hidden>
+      <h1>Predict &amp; Run</h1>
+      <p class="lead">Guess how fast your model will be and how much memory it uses, then measure it. Comparing your guess with reality is how you build intuition.</p>
+      <div id="predict-body"></div>
+    </div>
+
+    <div id="view-results" class="view" hidden>
+      <h1>Results</h1>
+      <p class="lead">Every measurement is saved on this laptop. Download the file and upload it to the team dashboard to compare laptops.</p>
+      <div id="results-body"></div>
+    </div>
+  </section>
+
+  <aside class="assistant" aria-label="Lab assistant">
+    <header class="a-head">
+      <div><strong>Lab assistant</strong><div class="small muted" id="a-model">Starting…</div></div>
+      <label class="switch" title="Only turn this off to compare behaviour in a demo">
+        <input type="checkbox" id="safety" checked><span class="track"></span><span class="small">Safety layer</span>
+      </label>
+    </header>
+    <div id="safety-off" class="note bad small" hidden>Safety layer is off. Use this only to show the with/without comparison.</div>
+    <div id="msgs" class="msgs" aria-live="polite"></div>
+    <div id="suggest" class="chips"></div>
+    <form id="a-form" class="a-form">
+      <textarea id="a-input" rows="2" placeholder="Ask a question or paste an error…"></textarea>
+      <button class="btn primary" id="a-send">Send</button>
+    </form>
+  </aside>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>
