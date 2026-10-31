@@ -88,7 +88,8 @@ class Settings:
             raise ValueError("AGENT_RUNTIME must be ollama or llama.cpp.")
         if not isinstance(self.agent_model, str) or not self.agent_model or len(self.agent_model) > 128:
             raise ValueError("Invalid agent model identifier.")
-        if isinstance(self.disk_budget_gb, bool) or not math.isfinite(self.disk_budget_gb) or not 0 < self.disk_budget_gb <= 10:
+        if (type(self.disk_budget_gb) not in (int, float) or not 0 < self.disk_budget_gb <= 10
+                or not math.isfinite(self.disk_budget_gb)):
             raise ValueError("DISK_BUDGET_GB must be greater than 0 and no more than 10 GiB.")
         for name in ("models_dir", "results_dir", "runtime_models_dir"):
             setattr(self, name, Path(getattr(self, name)).expanduser().resolve())
@@ -102,8 +103,8 @@ class Settings:
 
 def load_allow_list() -> list[dict]:
     """Models the agent is allowed to recommend or benchmark."""
-    return json.loads((SKILL_DIR / "models.json").read_text())["models"]
+    return json.loads((SKILL_DIR / "models.json").read_text(encoding="utf-8"))["models"]
 
 
 def load_error_catalog() -> list[dict]:
-    return json.loads((SKILL_DIR / "error_catalog.json").read_text())["errors"]
+    return json.loads((SKILL_DIR / "error_catalog.json").read_text(encoding="utf-8"))["errors"]

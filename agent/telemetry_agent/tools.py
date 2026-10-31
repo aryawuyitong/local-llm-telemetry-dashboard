@@ -26,7 +26,9 @@ _BENCHMARK_LOCK = threading.Lock()
 def _number(value, name, maximum=MAX_PREDICTION):
     if value is None:
         return None
-    if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= maximum:
+    # Compare integer bounds before math.isfinite converts an arbitrary JSON int
+    # to float (which can otherwise raise OverflowError before structured reject).
+    if type(value) not in (int, float) or not 0 <= value <= maximum or not math.isfinite(value):
         raise ValueError(f"{name} must be a finite number between 0 and {maximum}.")
     return float(value)
 
@@ -100,8 +102,8 @@ class Toolbox:
             return bool(ok)
 
         checks = [
-            lambda: add(1, "python", sys.version_info >= (3, 9), f"Python {sys.version.split()[0]}",
-                        "Use a current Python from python.org in a standard user account."),
+            lambda: add(1, "python", sys.version_info >= (3, 11), f"Python {sys.version.split()[0]}",
+                        "Use Python 3.11+ from python.org in a standard user account."),
             lambda: self._check_runtime(add),
             lambda: self._check_server(add, client, models),
             lambda: self._check_model(add, models),

@@ -4,10 +4,12 @@ This record separates implementation checks from acceptance evidence. It does no
 
 ## Local checks,2026-10-31
 
-- Python3.13.2 on macOS, psutil7.2.2:98 backend unit/integration tests passed. These include real loopback fake-HTTP servers, strict tool-call parsing, native decode-token/duration handling, failed/partial attempts, process attribution, OS/thread locks, export privacy, Host/Origin/token checks, proxy/redirect rejection, complete-installation budget gates, and safe manual deployment behavior.
+- Python3.13.2 on macOS, psutil7.2.2:103 backend unit/integration tests passed. These include real loopback fake-HTTP servers, strict tool-call parsing, native decode-token/duration handling, failed/partial attempts, process attribution, OS/thread locks, export privacy, Host/Origin/token checks, proxy/redirect rejection, complete-installation budget gates, and safe manual deployment behavior.
 - Node25.8.1:13 portal tests passed, covering the actual synthetic files, schema/version/units, finite metrics, source/status/date checks, duplicates, missing versus zero, filters and recomputation, malicious summaries and oversized input.
 - Six independent-review scorer tests and the project contract checks passed locally and are included in CI. Blank judgments remain pending; no rubric acceptance score is inferred from unit tests.
 - Chrome desktop: inspected Learn and Results visually; loaded synthetic examples, filtered device/prompt to three runs, and completed the ten-question quiz with a10/10 score using the visible answers. This verifies UI behavior, not an observed learning gain. The local helper opened through a tokenized launch link, completed the hardware check without model inference, and displayed the failed experiment as0 complete /0 partial /9 errors with missing metric values. A top-level navigation regression found during this check was fixed without relaxing cross-site API rejection.
+
+GitHub CI initially passed both Python versions on Linux/macOS and the portal job, but exposed a Windows default-encoding failure when loading Unicode teaching resources. File and CSV reads/writes now explicitly use UTF-8; a cp1252 simulation regression covers the real agent resources and project checker. Python3.11 is enforced consistently by checks and launchers.
 
 ## Actual local runtime attempt
 

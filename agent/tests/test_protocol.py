@@ -11,12 +11,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def fixture(name="synthetic-macos.json"):
-    return json.loads((ROOT / "portal" / "examples" / name).read_text())
+    return json.loads((ROOT / "portal" / "examples" / name).read_text(encoding="utf-8"))
 
 
 class Protocol(unittest.TestCase):
     def test_shared_schema_and_fixtures_are_consistent(self):
-        self.assertEqual(json.loads((ROOT / "docs" / "schema-v1.json").read_text()), JSON_SCHEMA)
+        self.assertEqual(json.loads((ROOT / "docs" / "schema-v1.json").read_text(encoding="utf-8")), JSON_SCHEMA)
         for name in ("synthetic-macos.json", "synthetic-windows.json", "synthetic-session.json"):
             value = validate_session(fixture(name))
             self.assertEqual(value["data_kind"], "synthetic")
@@ -74,10 +74,15 @@ class Protocol(unittest.TestCase):
     def test_bounded_loader_rejects_legacy_and_invalid_json(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "session.json"
-            path.write_text(json.dumps(fixture()))
+            path.write_text(json.dumps(fixture()), encoding="utf-8")
             self.assertEqual(load_session(path)["schema_version"], "1.0")
+            huge = fixture()
+            huge["runs"][0]["measurements"]["decode_tps"] = 10**1000
+            path.write_text(json.dumps(huge), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_session(path)
             for value in ('{"summary":{},"runs":[]}', '{"x": NaN}', 'not-json'):
-                path.write_text(value)
+                path.write_text(value, encoding="utf-8")
                 with self.assertRaises(ValueError):
                     load_session(path)
 
@@ -88,12 +93,12 @@ class Protocol(unittest.TestCase):
             doc["summary"]["note"] = "/Users/private-account raw private log"
             doc["summary"]["method"] = "Private free text from an imported file"
             doc["summary"]["median_tps"] = 999999
-            path.write_text(json.dumps(doc))
+            path.write_text(json.dumps(doc), encoding="utf-8")
             imported = load_session(path)
             self.assertNotIn("private", json.dumps(imported["summary"]).lower())
             self.assertNotEqual(imported["summary"]["median_tps"], 999999)
             doc["summary"]["metadata"] = {"raw_log": "secret"}
-            path.write_text(json.dumps(doc))
+            path.write_text(json.dumps(doc), encoding="utf-8")
             with self.assertRaises(ValueError):
                 load_session(path)
 

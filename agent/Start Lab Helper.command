@@ -10,8 +10,8 @@ if [ ! -x "$LAB_PYTHON" ]; then
   if [ -t 0 ]; then read -r -p "Press Return to close." _; fi
   exit 1
 fi
-if ! "$LAB_PYTHON" -c "import sys, psutil; assert sys.version_info >= (3, 9)" >/dev/null 2>&1; then
-  echo "The lab needs Python 3.9+ and its listed dependencies."
+if ! "$LAB_PYTHON" -c "import sys, psutil; assert sys.version_info >= (3, 11)" >/dev/null 2>&1; then
+  echo "The lab needs Python 3.11+ and its listed dependencies."
   echo "From this folder run: .venv/bin/python -m pip install -r requirements.txt"
   echo "If installation needs admin access or a security bypass, stop and ask the team."
   if [ -t 0 ]; then read -r -p "Press Return to close." _; fi

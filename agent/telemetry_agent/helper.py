@@ -276,7 +276,9 @@ class Lab:
                 agent = self._agents[model]
                 if len(agent.messages) > 80:
                     agent.reset()
-                reply = agent.ask(guardrails.redact_secrets(text))
+                # The agent owns pre-model redaction and must see that a secret
+                # was pasted so it can also explain revocation/change guidance.
+                reply = agent.ask(text)
             return {"text": _safe_text(reply.text), "model": model, "guardrails": True,
                     "guardrail_intervened": reply.guardrail_intervened,
                     "flagged": sorted({v.rule for v in reply.raw_violations}),
@@ -330,13 +332,20 @@ class Lab:
                 if delta:
                     first = ts if first is None else first
                     parts.append(delta)
-                if usage and type(usage.get("completion_tokens")) is int:
-                    tokens = usage["completion_tokens"]
+                if usage and usage.get("completion_tokens") is not None:
+                    count = usage["completion_tokens"]
+                    if type(count) is not int or not 0 <= count <= 128:
+                        raise ValueError("The local runtime returned an invalid output-token count.")
+                    tokens = count
                 if usage and usage.get("source") == "ollama_native":
                     count, nanos = usage.get("eval_count"), usage.get("eval_duration")
-                    if type(count) is int and 0 <= count <= 128:
+                    if count is not None and (type(count) is not int or not 0 <= count <= 128):
+                        raise ValueError("The local runtime returned an invalid decode-token count.")
+                    if count is not None:
                         tokens = count
-                    if type(nanos) in (int, float) and math.isfinite(nanos) and nanos > 0:
+                    if nanos is not None and (type(nanos) not in (int, float) or not 0 < nanos <= 10**15 or not math.isfinite(nanos)):
+                        raise ValueError("The local runtime returned an invalid decode duration.")
+                    if nanos is not None:
                         duration = nanos / 1e9
             output = _safe_text("".join(parts).strip())
             violations = guardrails.check(output)

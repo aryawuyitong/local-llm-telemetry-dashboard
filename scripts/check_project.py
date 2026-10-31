@@ -32,9 +32,9 @@ def main():
         if len(data['runs']) != 9 or data['config']['repeats'] != 3:
             raise ValueError('Example baseline must contain nine attempted runs.')
         count += 1
-    Assets().feed((ROOT / 'portal/index.html').read_text())
+    Assets().feed((ROOT / 'portal/index.html').read_text(encoding="utf-8"))
     for suite, expected in [('diagnosis', 20), ('redteam', 15), ('benign', 5)]:
-        data = json.loads((ROOT / f'evaluation/cases/{suite}.json').read_text())
+        data = json.loads((ROOT / f'evaluation/cases/{suite}.json').read_text(encoding="utf-8"))
         cases = data['cases']
         if len(cases) != expected or len({c['id'] for c in cases}) != expected:
             raise ValueError('Invalid suite: ' + suite)
@@ -48,7 +48,7 @@ def main():
             ast.parse(path.read_text(encoding='utf-8'), filename=str(path))
     for filename in ['README.md','agent/README.md','docs/architecture.md','docs/measurement-protocol.md','docs/validation.md','evaluation/README.md','portal/README.md']:
         path = ROOT / filename
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         for target in re.findall(r'\]\(([^)]+)\)', text):
             if re.match(r'\w+://', target) or target.startswith('#') or '<' in target:
                 continue

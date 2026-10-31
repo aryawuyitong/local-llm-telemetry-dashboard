@@ -127,13 +127,13 @@ class HelperServer(unittest.TestCase):
 
     def test_json_download_rebuilds_summary_and_removes_private_labels(self):
         fixture = ROOT.parent / "portal/examples/synthetic-session.json"
-        data = json.loads(fixture.read_text())
+        data = json.loads(fixture.read_text(encoding="utf-8"))
         data["session_id"], data["device"]["alias"] = "AliceExample", "AliceExample"
         data["summary"]["note"] = "private /Users/AliceExample/private.txt password=sample_secret_value"
         folder = self.lab.settings.results_dir
         folder.mkdir(exist_ok=True)
         path = folder / "test-session.json"
-        path.write_text(json.dumps(data))
+        path.write_text(json.dumps(data), encoding="utf-8")
         try:
             status, body = request(self.port, "/api/results.json", self.token)
             self.assertEqual(status, 200)
@@ -175,6 +175,21 @@ class LabLogic(unittest.TestCase):
     def setUp(self):
         self.lab = helper.Lab(Settings(base_url="http://127.0.0.1:9/v1"))
 
+    def test_secret_detection_reaches_agent_but_secret_never_reaches_model(self):
+        class CaptureModel:
+            def chat(self, messages, **kwargs):
+                self.messages = [dict(item) for item in messages]
+                return {"content": "Revoke or change the secret you pasted. Do not share secrets."}
+        model, capture = "qwen2.5:0.5b", CaptureModel()
+        local = helper.LabAgent(Settings(agent_model=model, router=False), llm=capture)
+        self.lab._agents[model] = local
+        with mock.patch.object(self.lab, "runtime_state", return_value={"lab_models": [model]}), \
+             mock.patch.object(self.lab.tools, "ensure_model_ready", return_value={}):
+            answer = self.lab.chat("My password is FakeSecretZebra2026!")
+        self.assertNotIn("FakeSecretZebra2026", json.dumps(capture.messages))
+        self.assertIn("revoke/change it now", capture.messages[-1]["content"])
+        self.assertIn("Revoke or change", answer["text"])
+
     def test_all_failed_benchmark_is_not_a_success_job(self):
         job = {"action": "benchmark", "args": {"model": "qwen2.5:0.5b"}}
         self.lab._operation_lock.acquire()
@@ -207,6 +222,17 @@ class LabLogic(unittest.TestCase):
         self.assertEqual(result["tps"], 6)
         self.assertEqual(result["tokens"], 12)
         self.assertEqual(result["ttft_s"], 0.5)
+
+    def test_huge_runtime_counters_are_structured_rejections_not_overflow(self):
+        for usage in ({"source": "ollama_native", "eval_count": 12, "eval_duration": 10**1000},
+                      {"source": "ollama_native", "eval_count": 10**1000, "eval_duration": 1000000},
+                      {"completion_tokens": 10**1000}):
+            frames = [(1.0, "Some output", usage)]
+            with self.subTest(fields=list(usage)), \
+                 mock.patch.object(self.lab.tools, "ensure_model_ready", return_value={}), \
+                 mock.patch.object(helper.ChatClient, "benchmark_stream", return_value=iter(frames)), \
+                 self.assertRaisesRegex(ValueError, "local runtime returned an invalid"):
+                self.lab.try_model("qwen2.5:0.5b", "Say something")
 
 
 if __name__ == "__main__":

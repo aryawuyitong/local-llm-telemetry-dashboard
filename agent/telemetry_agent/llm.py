@@ -196,7 +196,7 @@ class ChatClient:
                     result["quantization"] = quant
                 if path == "/api/ps":
                     vram = item.get("size_vram")
-                    if isinstance(vram, (int, float)) and not isinstance(vram, bool) and math.isfinite(vram) and vram >= 0:
+                    if (type(vram) in (int, float) and 0 <= vram <= 2**60 and math.isfinite(vram)):
                         result["acceleration"] = "gpu-assisted" if vram > 0 else "cpu"
                     context = item.get("context_length")
                     if isinstance(context, int) and not isinstance(context, bool) and context > 0:

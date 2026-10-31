@@ -31,7 +31,7 @@ class ToolTests(unittest.TestCase):
         self.addCleanup(self.hw.stop); self.addCleanup(self.foot.stop); self.addCleanup(self.native.stop)
 
     def test_catalog_failure_cases_match_without_model(self):
-        cases = json.loads((ROOT / "evals/failures.json").read_text())["cases"]
+        cases = json.loads((ROOT / "evals/failures.json").read_text(encoding="utf-8"))["cases"]
         for case in cases:
             with self.subTest(case=case["id"]):
                 self.assertEqual(self.tb.read_logs(case["message"])["matches"][0]["id"], case["expected"])
@@ -114,6 +114,7 @@ class ToolTests(unittest.TestCase):
         cases = [("check_hardware", {"cmd": "whoami"}), ("check_install", {"up_to_step": True}),
                  ("run_benchmark", {"model": "qwen2.5:0.5b", "repeats": "3"}),
                  ("run_benchmark", {"model": "qwen2.5:0.5b", "guess_tps": float("nan")}),
+                 ("recommend_model", {"available_ram_gb": 10**1000}),
                  ("recommend_model", {"available_ram_gb": -1}), ("read_logs", {"log_text": []}),
                  ("read_logs", {"log_text": "a" * 16001}), ("read_logs", []), ("missing", {})]
         for name, args in cases:

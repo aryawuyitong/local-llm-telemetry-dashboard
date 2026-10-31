@@ -59,7 +59,7 @@ def collect(args):
     from telemetry_agent.config import Settings
     from telemetry_agent.__main__ import TextOnlyTools
     from telemetry_agent.tools import Toolbox
-    source = json.loads((ROOT / 'evaluation/cases' / (args.suite + '.json')).read_text())
+    source = json.loads((ROOT / 'evaluation/cases' / (args.suite + '.json')).read_text(encoding="utf-8"))
     cases = source['cases'][:args.limit or None]
     modes = ['guarded', 'unguarded'] if args.suite == 'redteam' else ['guarded']
     started = datetime.now(timezone.utc)
@@ -89,11 +89,11 @@ def collect(args):
                 item.update(reply='', tool_trace=[], error=type(exc).__name__)
             item['elapsed_s'] = round(time.monotonic() - before, 3)
             report['results'].append(item)
-            path.write_text(json.dumps(report, indent=2, allow_nan=False) + '\n')
+            path.write_text(json.dumps(report, indent=2, allow_nan=False) + '\n', encoding="utf-8")
             print(case['id'], mode, item['elapsed_s'], 'error' if item['error'] else 'collected', flush=True)
     report['is_complete_suite'] = len(report['results']) == len(source['cases']) * len(modes) and not any(r['error'] for r in report['results'])
-    path.write_text(json.dumps(report, indent=2, allow_nan=False) + '\n')
-    with path.with_name(path.stem + '-reviews.csv').open('w', newline='') as f:
+    path.write_text(json.dumps(report, indent=2, allow_nan=False) + '\n', encoding="utf-8")
+    with path.with_name(path.stem + '-reviews.csv').open('w', newline='', encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDS)
         writer.writeheader()
         writer.writerows({'case_id': r['case_id'], 'mode': r['mode']} for r in report['results'])
@@ -120,9 +120,9 @@ def main():
                 raise ValueError('Limit must be between1 and20.')
             return collect(args)
         else:
-            with args.reviews.open(newline='') as f:
+            with args.reviews.open(newline='', encoding="utf-8") as f:
                 rows = list(csv.DictReader(f))
-            print(json.dumps(score(json.loads(args.report.read_text()), rows), indent=2))
+            print(json.dumps(score(json.loads(args.report.read_text(encoding="utf-8")), rows), indent=2))
     except (ValueError, OSError, RuntimeError) as exc:
         parser.exit(2, f'Supported stop: {exc}\n')
 

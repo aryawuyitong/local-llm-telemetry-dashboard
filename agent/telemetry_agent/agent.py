@@ -43,7 +43,7 @@ class LabAgent:
         self.tool_names = {s["function"]["name"] for s in self.tools.schemas()}
         self.model_names = [m["ollama_tag"] for m in self.tools.allow_list]
         hw = hardware_info(self.settings.models_dir)
-        system = (SKILL_DIR / "skill.md").read_text()
+        system = (SKILL_DIR / "skill.md").read_text(encoding="utf-8")
         system += (f"\n## This learner\nOS: {hw['os']} {hw['os_version']} ({hw['arch']}), runtime: "
                    f"{self.settings.runtime}. Only give commands for this OS.\n")
         if self.settings.guardrails:
