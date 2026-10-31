@@ -1,0 +1,11 @@
+{
+  "name": "local-llm-learning-lab",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Local inference learning lab and browser-only telemetry analysis",
+  "scripts": {
+    "test": "node --test portal/tests/*.test.js",
+    "preview": "python3 -m http.server 4173 --bind 127.0.0.1 --directory portal"
+  },
+  "engines": { "node": ">=20" }
+}

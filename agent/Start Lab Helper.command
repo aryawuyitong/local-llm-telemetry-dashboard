@@ -1,22 +1,20 @@
 #!/bin/bash
-# Double-click this file to start the Local AI Lab (macOS).
-# Keep this window open while you use the lab; close it to stop.
-cd "$(dirname "$0")" || exit 1
-
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "The lab needs Python 3. Install it from https://www.python.org/downloads/ and double-click this file again."
-  read -r -p "Press Return to close." _
+# Starts the helper only. Dependency installation remains a visible manual step.
+cd -- "$(dirname -- "$0")" || exit 1
+LAB_PYTHON="./.venv/bin/python"
+if [ ! -x "$LAB_PYTHON" ]; then
+  echo "Create this lab's Python environment manually in this folder:"
+  echo "  python3 -m venv .venv"
+  echo "  .venv/bin/python -m pip install -r requirements.txt"
+  echo "Then double-click Start Lab Helper again. Do not use sudo."
+  if [ -t 0 ]; then read -r -p "Press Return to close." _; fi
   exit 1
 fi
-
-if [ ! -x .venv/bin/python ]; then
-  echo "First run: setting up the lab's own Python environment in this folder (one time, about 20 seconds)..."
-  if ! { python3 -m venv .venv && .venv/bin/python -m pip install --quiet -r requirements.txt; }; then
-    rm -rf .venv
-    echo "Setup failed. Send the text in this window to your lab team."
-    read -r -p "Press Return to close." _
-    exit 1
-  fi
+if ! "$LAB_PYTHON" -c "import sys, psutil; assert sys.version_info >= (3, 11)" >/dev/null 2>&1; then
+  echo "The lab needs Python 3.11+ and its listed dependencies."
+  echo "From this folder run: .venv/bin/python -m pip install -r requirements.txt"
+  echo "If installation needs admin access or a security bypass, stop and ask the team."
+  if [ -t 0 ]; then read -r -p "Press Return to close." _; fi
+  exit 1
 fi
-
-exec .venv/bin/python -m telemetry_agent.helper
+exec "$LAB_PYTHON" -m telemetry_agent.helper

@@ -1,0 +1,1026 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:local-llm-lab:schema:1.0",
+  "title": "Local LLM Lab session (anonymous)",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "protocol_version",
+    "data_kind",
+    "session_id",
+    "created_at",
+    "device",
+    "runtime",
+    "model",
+    "config",
+    "warmup_round_trip_s",
+    "predictions",
+    "runs",
+    "summary"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "protocol_version": {
+      "const": "local-llm-lab/1"
+    },
+    "data_kind": {
+      "enum": [
+        "measured",
+        "synthetic"
+      ]
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+    },
+    "created_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+    },
+    "device": {
+      "type": "object",
+      "required": [
+        "alias",
+        "os",
+        "os_version",
+        "cpu_model",
+        "logical_cores",
+        "total_ram_gib",
+        "gpu",
+        "arch"
+      ],
+      "properties": {
+        "alias": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,47}$"
+        },
+        "os": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "os_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "cpu_model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "logical_cores": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "total_ram_gib": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gpu": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "arch": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtime": {
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 180
+        }
+      },
+      "additionalProperties": false
+    },
+    "model": {
+      "type": "object",
+      "required": [
+        "name",
+        "digest",
+        "quantization",
+        "acceleration"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "digest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "quantization": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "acceleration": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        }
+      },
+      "additionalProperties": false
+    },
+    "config": {
+      "type": "object",
+      "required": [
+        "temperature",
+        "max_output_tokens",
+        "repeats",
+        "context_tokens"
+      ],
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "max_output_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "repeats": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "context_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "warmup_round_trip_s": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "predictions": {
+      "type": "object",
+      "required": [
+        "tps",
+        "ram_gib"
+      ],
+      "properties": {
+        "tps": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "ram_gib": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "runs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 9,
+      "items": {
+        "type": "object",
+        "required": [
+          "run_id",
+          "prompt_id",
+          "repeat_index",
+          "timestamp",
+          "status",
+          "measurements",
+          "sources",
+          "quality_flags",
+          "error"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+          },
+          "prompt_id": {
+            "enum": [
+              "short",
+              "medium",
+              "long"
+            ]
+          },
+          "repeat_index": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "timestamp": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "measurements": {
+            "type": "object",
+            "required": [
+              "ttft_ms",
+              "decode_tps",
+              "cpu_percent_normalized",
+              "peak_rss_mib"
+            ],
+            "properties": {
+              "ttft_ms": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "decode_tps": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "cpu_percent_normalized": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 100
+              },
+              "peak_rss_mib": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
+          "sources": {
+            "type": "object",
+            "required": [
+              "ttft_ms",
+              "decode_tps",
+              "cpu_percent_normalized",
+              "peak_rss_mib",
+              "output_tokens",
+              "decode_duration_s",
+              "sample_interval_s",
+              "process_count",
+              "process_attribution",
+              "cache_policy",
+              "prompt_hash"
+            ],
+            "properties": {
+              "ttft_ms": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1,
+                "maxLength": 180
+              },
+              "decode_tps": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1,
+                "maxLength": 180
+              },
+              "cpu_percent_normalized": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1,
+                "maxLength": 180
+              },
+              "peak_rss_mib": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1,
+                "maxLength": 180
+              },
+              "output_tokens": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "decode_duration_s": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              },
+              "sample_interval_s": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "process_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "process_attribution": {
+                "enum": [
+                  "endpoint_owner_and_children",
+                  "unavailable"
+                ]
+              },
+              "cache_policy": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 180
+              },
+              "prompt_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "additionalProperties": false
+          },
+          "quality_flags": {
+            "type": "array",
+            "maxItems": 40,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,79}$"
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 240
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "runs",
+        "valid_runs",
+        "partial_runs",
+        "failed_runs",
+        "median_ttft_ms",
+        "median_tps",
+        "median_cpu_percent",
+        "peak_ram_mb",
+        "ttft_ms_range",
+        "decode_tps_range",
+        "cpu_percent_normalized_range",
+        "peak_rss_mib_range",
+        "ttft_ms_valid_count",
+        "decode_tps_valid_count",
+        "cpu_percent_normalized_valid_count",
+        "peak_rss_mib_valid_count",
+        "per_prompt",
+        "method"
+      ],
+      "properties": {
+        "runs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "valid_runs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "partial_runs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "failed_runs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "median_ttft_ms": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "median_tps": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "median_cpu_percent": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "peak_ram_mb": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "ttft_ms_range": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "decode_tps_range": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "cpu_percent_normalized_range": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "peak_rss_mib_range": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "ttft_ms_valid_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "decode_tps_valid_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "cpu_percent_normalized_valid_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "peak_rss_mib_valid_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "per_prompt": {
+          "type": "object",
+          "properties": {
+            "short": {
+              "type": "object",
+              "required": [
+                "runs",
+                "valid_runs",
+                "partial_runs",
+                "failed_runs",
+                "median_ttft_ms",
+                "median_tps",
+                "median_cpu_percent",
+                "peak_ram_mb",
+                "ttft_ms_range",
+                "decode_tps_range",
+                "cpu_percent_normalized_range",
+                "peak_rss_mib_range",
+                "ttft_ms_valid_count",
+                "decode_tps_valid_count",
+                "cpu_percent_normalized_valid_count",
+                "peak_rss_mib_valid_count"
+              ],
+              "properties": {
+                "runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "valid_runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "partial_runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "failed_runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "median_ttft_ms": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "median_tps": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "median_cpu_percent": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "peak_ram_mb": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "ttft_ms_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "decode_tps_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "cpu_percent_normalized_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "peak_rss_mib_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "ttft_ms_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "decode_tps_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "cpu_percent_normalized_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "peak_rss_mib_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                }
+              },
+              "additionalProperties": false
+            },
+            "medium": {
+              "type": "object",
+              "required": [
+                "runs",
+                "valid_runs",
+                "partial_runs",
+                "failed_runs",
+                "median_ttft_ms",
+                "median_tps",
+                "median_cpu_percent",
+                "peak_ram_mb",
+                "ttft_ms_range",
+                "decode_tps_range",
+                "cpu_percent_normalized_range",
+                "peak_rss_mib_range",
+                "ttft_ms_valid_count",
+                "decode_tps_valid_count",
+                "cpu_percent_normalized_valid_count",
+                "peak_rss_mib_valid_count"
+              ],
+              "properties": {
+                "runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "valid_runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "partial_runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "failed_runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "median_ttft_ms": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "median_tps": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "median_cpu_percent": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "peak_ram_mb": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "ttft_ms_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "decode_tps_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "cpu_percent_normalized_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "peak_rss_mib_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "ttft_ms_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "decode_tps_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "cpu_percent_normalized_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "peak_rss_mib_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                }
+              },
+              "additionalProperties": false
+            },
+            "long": {
+              "type": "object",
+              "required": [
+                "runs",
+                "valid_runs",
+                "partial_runs",
+                "failed_runs",
+                "median_ttft_ms",
+                "median_tps",
+                "median_cpu_percent",
+                "peak_ram_mb",
+                "ttft_ms_range",
+                "decode_tps_range",
+                "cpu_percent_normalized_range",
+                "peak_rss_mib_range",
+                "ttft_ms_valid_count",
+                "decode_tps_valid_count",
+                "cpu_percent_normalized_valid_count",
+                "peak_rss_mib_valid_count"
+              ],
+              "properties": {
+                "runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "valid_runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "partial_runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "failed_runs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "median_ttft_ms": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "median_tps": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "median_cpu_percent": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "peak_ram_mb": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "ttft_ms_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "decode_tps_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "cpu_percent_normalized_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "peak_rss_mib_range": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "ttft_ms_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "decode_tps_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "cpu_percent_normalized_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "peak_rss_mib_valid_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "runtime": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "machine_label": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,47}$"
+        },
+        "warmup_round_trip_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "quality_flags": {
+          "type": "array",
+          "maxItems": 40,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,79}$"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

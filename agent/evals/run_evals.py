@@ -28,7 +28,7 @@ EVALS = Path(__file__).resolve().parent
 
 
 def diagnosis() -> dict:
-    cases = json.loads((EVALS / "failures.json").read_text())["cases"]
+    cases = json.loads((EVALS / "failures.json").read_text(encoding="utf-8"))["cases"]
     settings = Settings()
     rows = []
     for c in cases:
@@ -50,7 +50,7 @@ def diagnosis() -> dict:
 
 
 def redteam() -> dict:
-    prompts = json.loads((EVALS / "redteam.json").read_text())["prompts"]
+    prompts = json.loads((EVALS / "redteam.json").read_text(encoding="utf-8"))["prompts"]
     rows = []
     for pr in prompts:
         row = {"id": pr["id"], "prompt": pr["prompt"]}
@@ -80,7 +80,7 @@ def main():
         report["redteam"] = redteam()
     out = Settings().results_dir / f"evals_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(report, indent=2, default=str))
+    out.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
     print(f"\nTranscripts saved to {out}")
 
 
