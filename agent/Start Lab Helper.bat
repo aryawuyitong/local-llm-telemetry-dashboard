@@ -1,21 +1,29 @@
 @echo off
-rem Double-click this file to start the Local AI Lab (Windows).
-rem Keep this window open while you use the lab; close it to stop.
+setlocal
+rem Launch only; never installs, deletes or changes execution policy.
 cd /d "%~dp0"
-
-set "PY=python"
-where py >nul 2>nul && set "PY=py -3"
-
-if not exist ".venv\Scripts\python.exe" (
-  echo First run: setting up the lab's own Python environment in this folder, one time...
-  %PY% -m venv .venv || goto fail
-  ".venv\Scripts\python.exe" -m pip install --quiet -r requirements.txt || goto fail
-)
-
-".venv\Scripts\python.exe" -m telemetry_agent.helper
-goto :eof
-
-:fail
-if exist ".venv" rmdir /s /q ".venv"
-echo Setup failed. Install Python from python.org (tick "Add python.exe to PATH"), then double-click this file again.
+set "LAB_PYTHON=%~dp0.venv\Scripts\python.exe"
+if not exist "%LAB_PYTHON%" goto missing
+"%LAB_PYTHON%" -c "import sys, psutil; assert sys.version_info >= (3, 9)" >nul 2>nul
+if errorlevel 1 goto dependencies
+echo Windows support awaits physical-device validation.
+"%LAB_PYTHON%" -m telemetry_agent.helper
+if errorlevel 1 goto failed
+exit /b 0
+:missing
+echo Create the lab environment manually from this folder:
+echo   py -3 -m venv .venv
+echo   .venv\Scripts\python.exe -m pip install -r requirements.txt
+echo Then run this launcher again. Do not run as administrator.
 pause
+exit /b 1
+:dependencies
+echo Python 3.9+ and the listed dependencies are required.
+echo Run: .venv\Scripts\python.exe -m pip install -r requirements.txt
+echo If a step needs administrator access or a security bypass, stop and ask the team.
+pause
+exit /b 1
+:failed
+echo The helper stopped. Read the error above and contact the project team.
+pause
+exit /b 1

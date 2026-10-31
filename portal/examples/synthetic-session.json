@@ -1,0 +1,434 @@
+{
+  "schema_version": "1.0",
+  "protocol_version": "local-llm-lab/1",
+  "data_kind": "synthetic",
+  "session_id": "synthetic-demo-macos-v1",
+  "created_at": "2026-10-30T12:00:00Z",
+  "device": {
+    "alias": "demo-macos",
+    "os": "macOS",
+    "os_version": "synthetic-example",
+    "cpu_model": "Synthetic Apple-class CPU",
+    "logical_cores": 8,
+    "total_ram_gib": 16,
+    "gpu": "Synthetic hardware; no real device measured",
+    "arch": "arm64"
+  },
+  "runtime": {
+    "name": "ollama",
+    "version": "synthetic-example"
+  },
+  "model": {
+    "name": "qwen2.5:1.5b",
+    "digest": null,
+    "quantization": "Q4_K_M",
+    "acceleration": "synthetic-example"
+  },
+  "config": {
+    "temperature": 0,
+    "max_output_tokens": 128,
+    "repeats": 3,
+    "context_tokens": 2048
+  },
+  "warmup_round_trip_s": 2.5,
+  "predictions": {
+    "tps": 20,
+    "ram_gib": 1.5
+  },
+  "runs": [
+    {
+      "run_id": "demo-macos-short-1",
+      "prompt_id": "short",
+      "repeat_index": 1,
+      "timestamp": "2026-10-30T12:00:00Z",
+      "status": "ok",
+      "measurements": {
+        "ttft_ms": 178,
+        "decode_tps": 27.2,
+        "cpu_percent_normalized": 14.5,
+        "peak_rss_mib": 1803
+      },
+      "sources": {
+        "ttft_ms": "synthetic_example_not_measured",
+        "decode_tps": "synthetic_example_not_measured",
+        "cpu_percent_normalized": "synthetic_example_not_measured",
+        "peak_rss_mib": "synthetic_example_not_measured",
+        "output_tokens": 64,
+        "decode_duration_s": 2.352941,
+        "sample_interval_s": 0.1,
+        "process_count": 2,
+        "process_attribution": "endpoint_owner_and_children",
+        "cache_policy": "synthetic_example_no_request_performed",
+        "prompt_hash": "5a964c7fef82a143c73cf1e62721c3671679e69ca6813d8a7fd0e6f6010a2bd1"
+      },
+      "quality_flags": [
+        "synthetic_example"
+      ],
+      "error": null
+    },
+    {
+      "run_id": "demo-macos-short-2",
+      "prompt_id": "short",
+      "repeat_index": 2,
+      "timestamp": "2026-10-30T12:00:00Z",
+      "status": "ok",
+      "measurements": {
+        "ttft_ms": 186,
+        "decode_tps": 28.0,
+        "cpu_percent_normalized": 15.0,
+        "peak_rss_mib": 1806
+      },
+      "sources": {
+        "ttft_ms": "synthetic_example_not_measured",
+        "decode_tps": "synthetic_example_not_measured",
+        "cpu_percent_normalized": "synthetic_example_not_measured",
+        "peak_rss_mib": "synthetic_example_not_measured",
+        "output_tokens": 64,
+        "decode_duration_s": 2.285714,
+        "sample_interval_s": 0.1,
+        "process_count": 2,
+        "process_attribution": "endpoint_owner_and_children",
+        "cache_policy": "synthetic_example_no_request_performed",
+        "prompt_hash": "b41890674b2bc5a37225ae01651b1a55b2bb651646f27f8a8b91d8000bff71a1"
+      },
+      "quality_flags": [
+        "synthetic_example"
+      ],
+      "error": null
+    },
+    {
+      "run_id": "demo-macos-short-3",
+      "prompt_id": "short",
+      "repeat_index": 3,
+      "timestamp": "2026-10-30T12:00:00Z",
+      "status": "ok",
+      "measurements": {
+        "ttft_ms": 194,
+        "decode_tps": 28.8,
+        "cpu_percent_normalized": 15.5,
+        "peak_rss_mib": 1809
+      },
+      "sources": {
+        "ttft_ms": "synthetic_example_not_measured",
+        "decode_tps": "synthetic_example_not_measured",
+        "cpu_percent_normalized": "synthetic_example_not_measured",
+        "peak_rss_mib": "synthetic_example_not_measured",
+        "output_tokens": 64,
+        "decode_duration_s": 2.222222,
+        "sample_interval_s": 0.1,
+        "process_count": 2,
+        "process_attribution": "endpoint_owner_and_children",
+        "cache_policy": "synthetic_example_no_request_performed",
+        "prompt_hash": "ab4c45d942ed6ebd9b575e98b169db3d957d6ba8e4a8c013c4ee374a61f2a10a"
+      },
+      "quality_flags": [
+        "synthetic_example"
+      ],
+      "error": null
+    },
+    {
+      "run_id": "demo-macos-medium-1",
+      "prompt_id": "medium",
+      "repeat_index": 1,
+      "timestamp": "2026-10-30T12:00:00Z",
+      "status": "ok",
+      "measurements": {
+        "ttft_ms": 258,
+        "decode_tps": 26.0,
+        "cpu_percent_normalized": 16.5,
+        "peak_rss_mib": 1828
+      },
+      "sources": {
+        "ttft_ms": "synthetic_example_not_measured",
+        "decode_tps": "synthetic_example_not_measured",
+        "cpu_percent_normalized": "synthetic_example_not_measured",
+        "peak_rss_mib": "synthetic_example_not_measured",
+        "output_tokens": 64,
+        "decode_duration_s": 2.461538,
+        "sample_interval_s": 0.1,
+        "process_count": 2,
+        "process_attribution": "endpoint_owner_and_children",
+        "cache_policy": "synthetic_example_no_request_performed",
+        "prompt_hash": "33fe6872d9bb20a1c8286439dee54505c6ccb8bed08c53da041612cf977dbf4a"
+      },
+      "quality_flags": [
+        "synthetic_example"
+      ],
+      "error": null
+    },
+    {
+      "run_id": "demo-macos-medium-2",
+      "prompt_id": "medium",
+      "repeat_index": 2,
+      "timestamp": "2026-10-30T12:00:00Z",
+      "status": "ok",
+      "measurements": {
+        "ttft_ms": 266,
+        "decode_tps": 26.8,
+        "cpu_percent_normalized": 17.0,
+        "peak_rss_mib": 1831
+      },
+      "sources": {
+        "ttft_ms": "synthetic_example_not_measured",
+        "decode_tps": "synthetic_example_not_measured",
+        "cpu_percent_normalized": "synthetic_example_not_measured",
+        "peak_rss_mib": "synthetic_example_not_measured",
+        "output_tokens": 64,
+        "decode_duration_s": 2.38806,
+        "sample_interval_s": 0.1,
+        "process_count": 2,
+        "process_attribution": "endpoint_owner_and_children",
+        "cache_policy": "synthetic_example_no_request_performed",
+        "prompt_hash": "defa0d0ce79eb2648608b6698f264be382ddf0f334a2680c2c2f6bb3c5b6c10e"
+      },
+      "quality_flags": [
+        "synthetic_example"
+      ],
+      "error": null
+    },
+    {
+      "run_id": "demo-macos-medium-3",
+      "prompt_id": "medium",
+      "repeat_index": 3,
+      "timestamp": "2026-10-30T12:00:00Z",
+      "status": "ok",
+      "measurements": {
+        "ttft_ms": 274,
+        "decode_tps": 27.6,
+        "cpu_percent_normalized": 17.5,
+        "peak_rss_mib": 1834
+      },
+      "sources": {
+        "ttft_ms": "synthetic_example_not_measured",
+        "decode_tps": "synthetic_example_not_measured",
+        "cpu_percent_normalized": "synthetic_example_not_measured",
+        "peak_rss_mib": "synthetic_example_not_measured",
+        "output_tokens": 64,
+        "decode_duration_s": 2.318841,
+        "sample_interval_s": 0.1,
+        "process_count": 2,
+        "process_attribution": "endpoint_owner_and_children",
+        "cache_policy": "synthetic_example_no_request_performed",
+        "prompt_hash": "31e23324bfd983316dba819045cdba1f083d670d2ccde91b6bedf620ce343a53"
+      },
+      "quality_flags": [
+        "synthetic_example"
+      ],
+      "error": null
+    },
+    {
+      "run_id": "demo-macos-long-1",
+      "prompt_id": "long",
+      "repeat_index": 1,
+      "timestamp": "2026-10-30T12:00:00Z",
+      "status": "ok",
+      "measurements": {
+        "ttft_ms": 338,
+        "decode_tps": 24.8,
+        "cpu_percent_normalized": 18.5,
+        "peak_rss_mib": 1853
+      },
+      "sources": {
+        "ttft_ms": "synthetic_example_not_measured",
+        "decode_tps": "synthetic_example_not_measured",
+        "cpu_percent_normalized": "synthetic_example_not_measured",
+        "peak_rss_mib": "synthetic_example_not_measured",
+        "output_tokens": 64,
+        "decode_duration_s": 2.580645,
+        "sample_interval_s": 0.1,
+        "process_count": 2,
+        "process_attribution": "endpoint_owner_and_children",
+        "cache_policy": "synthetic_example_no_request_performed",
+        "prompt_hash": "2e5b7b80f3d19adee3d57e03a61d2f0c2994634e642cf9927f5c354fc04278c6"
+      },
+      "quality_flags": [
+        "synthetic_example"
+      ],
+      "error": null
+    },
+    {
+      "run_id": "demo-macos-long-2",
+      "prompt_id": "long",
+      "repeat_index": 2,
+      "timestamp": "2026-10-30T12:00:00Z",
+      "status": "ok",
+      "measurements": {
+        "ttft_ms": 346,
+        "decode_tps": 25.6,
+        "cpu_percent_normalized": 19.0,
+        "peak_rss_mib": 1856
+      },
+      "sources": {
+        "ttft_ms": "synthetic_example_not_measured",
+        "decode_tps": "synthetic_example_not_measured",
+        "cpu_percent_normalized": "synthetic_example_not_measured",
+        "peak_rss_mib": "synthetic_example_not_measured",
+        "output_tokens": 64,
+        "decode_duration_s": 2.5,
+        "sample_interval_s": 0.1,
+        "process_count": 2,
+        "process_attribution": "endpoint_owner_and_children",
+        "cache_policy": "synthetic_example_no_request_performed",
+        "prompt_hash": "b467816d4d211f4b4e849bc4d159ffc891375559b2831c799687f19203a3122e"
+      },
+      "quality_flags": [
+        "synthetic_example"
+      ],
+      "error": null
+    },
+    {
+      "run_id": "demo-macos-long-3",
+      "prompt_id": "long",
+      "repeat_index": 3,
+      "timestamp": "2026-10-30T12:00:00Z",
+      "status": "ok",
+      "measurements": {
+        "ttft_ms": 354,
+        "decode_tps": 26.4,
+        "cpu_percent_normalized": 19.5,
+        "peak_rss_mib": 1859
+      },
+      "sources": {
+        "ttft_ms": "synthetic_example_not_measured",
+        "decode_tps": "synthetic_example_not_measured",
+        "cpu_percent_normalized": "synthetic_example_not_measured",
+        "peak_rss_mib": "synthetic_example_not_measured",
+        "output_tokens": 64,
+        "decode_duration_s": 2.424242,
+        "sample_interval_s": 0.1,
+        "process_count": 2,
+        "process_attribution": "endpoint_owner_and_children",
+        "cache_policy": "synthetic_example_no_request_performed",
+        "prompt_hash": "c972628f4cd887c04af8399656d66a2ade8f50255e22031938af76ae4c49dbea"
+      },
+      "quality_flags": [
+        "synthetic_example"
+      ],
+      "error": null
+    }
+  ],
+  "summary": {
+    "runs": 9,
+    "valid_runs": 9,
+    "partial_runs": 0,
+    "failed_runs": 0,
+    "median_ttft_ms": 266,
+    "ttft_ms_range": [
+      178,
+      354
+    ],
+    "ttft_ms_valid_count": 9,
+    "median_tps": 26.8,
+    "decode_tps_range": [
+      24.8,
+      28.8
+    ],
+    "decode_tps_valid_count": 9,
+    "median_cpu_percent": 17.0,
+    "cpu_percent_normalized_range": [
+      14.5,
+      19.5
+    ],
+    "cpu_percent_normalized_valid_count": 9,
+    "peak_ram_mb": 1859,
+    "peak_rss_mib_range": [
+      1803,
+      1859
+    ],
+    "peak_rss_mib_valid_count": 9,
+    "per_prompt": {
+      "short": {
+        "runs": 3,
+        "valid_runs": 3,
+        "partial_runs": 0,
+        "failed_runs": 0,
+        "median_ttft_ms": 186,
+        "ttft_ms_range": [
+          178,
+          194
+        ],
+        "ttft_ms_valid_count": 3,
+        "median_tps": 28.0,
+        "decode_tps_range": [
+          27.2,
+          28.8
+        ],
+        "decode_tps_valid_count": 3,
+        "median_cpu_percent": 15.0,
+        "cpu_percent_normalized_range": [
+          14.5,
+          15.5
+        ],
+        "cpu_percent_normalized_valid_count": 3,
+        "peak_ram_mb": 1809,
+        "peak_rss_mib_range": [
+          1803,
+          1809
+        ],
+        "peak_rss_mib_valid_count": 3
+      },
+      "medium": {
+        "runs": 3,
+        "valid_runs": 3,
+        "partial_runs": 0,
+        "failed_runs": 0,
+        "median_ttft_ms": 266,
+        "ttft_ms_range": [
+          258,
+          274
+        ],
+        "ttft_ms_valid_count": 3,
+        "median_tps": 26.8,
+        "decode_tps_range": [
+          26.0,
+          27.6
+        ],
+        "decode_tps_valid_count": 3,
+        "median_cpu_percent": 17.0,
+        "cpu_percent_normalized_range": [
+          16.5,
+          17.5
+        ],
+        "cpu_percent_normalized_valid_count": 3,
+        "peak_ram_mb": 1834,
+        "peak_rss_mib_range": [
+          1828,
+          1834
+        ],
+        "peak_rss_mib_valid_count": 3
+      },
+      "long": {
+        "runs": 3,
+        "valid_runs": 3,
+        "partial_runs": 0,
+        "failed_runs": 0,
+        "median_ttft_ms": 346,
+        "ttft_ms_range": [
+          338,
+          354
+        ],
+        "ttft_ms_valid_count": 3,
+        "median_tps": 25.6,
+        "decode_tps_range": [
+          24.8,
+          26.4
+        ],
+        "decode_tps_valid_count": 3,
+        "median_cpu_percent": 19.0,
+        "cpu_percent_normalized_range": [
+          18.5,
+          19.5
+        ],
+        "cpu_percent_normalized_valid_count": 3,
+        "peak_ram_mb": 1859,
+        "peak_rss_mib_range": [
+          1853,
+          1859
+        ],
+        "peak_rss_mib_valid_count": 3
+      }
+    },
+    "method": "Per-prompt median and range of non-error available values; peak_ram_mb is sampled peak RSS in MiB. Decode TPS uses runtime token count / runtime decode seconds; TTFT is client-observed first-text latency. Null means unavailable, never zero.",
+    "note": "SIMULATED EXAMPLE ONLY. These invented values demonstrate the interface and are not hardware results or evaluation evidence."
+  }
+}

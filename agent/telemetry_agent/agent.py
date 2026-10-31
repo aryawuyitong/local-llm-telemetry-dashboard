@@ -22,6 +22,10 @@ from .router import route
 from .system import hardware_info
 from .tools import Toolbox
 
+MAX_CALLS_PER_REPLY = 5
+MAX_TOOL_ARGUMENT_CHARS = 20000
+MAX_TOOL_CONTENT_CHARS = 32000
+
 
 @dataclass
 class AgentReply:
@@ -71,21 +75,27 @@ class LabAgent:
             msg = self.llm.chat(self.messages, tools=self.tools.schemas())
             calls = _tool_calls(msg, self.tool_names)
             if not calls:
-                return self._finish(msg.get("content") or "", trace)
-            self._run_calls(calls, trace, routed_by="llm", content=msg.get("content") or "")
+                return self._finish(_message_text(msg), trace)
+            self._run_calls(calls, trace, routed_by="llm", content=_message_text(msg, default=""))
 
         # Out of tool rounds: force a plain-text answer from what we have.
         self.messages.append({"role": "user", "content": "Stop calling tools. Summarize what you found and give the learner the single next step."})
         msg = self.llm.chat(self.messages)
-        return self._finish(msg.get("content") or "", trace)
+        return self._finish(_message_text(msg), trace)
 
     def _run_calls(self, calls: list[dict], trace: list[dict], routed_by: str, content: str = ""):
+        content = content[:MAX_TOOL_CONTENT_CHARS]
         self.messages.append({"role": "assistant", "content": content,
                               "tool_calls": [{"id": c["id"], "type": "function",
-                                              "function": {"name": c["name"], "arguments": json.dumps(c["args"])}}
+                                              "function": {"name": c["name"], "arguments": json.dumps(c["args"] if c.get("validation_error") is None else {})}}
                                              for c in calls]})
         for c in calls:
-            result = self.tools.call(c["name"], c["args"])
+            if c.get("validation_error") is not None:
+                result = {"error": c["validation_error"], "executed": False}
+            elif c["name"] not in self.tool_names:
+                result = {"error": {"code": "unknown_tool", "message": "Only the documented tools may be called."}, "executed": False}
+            else:
+                result = self.tools.call(c["name"], c["args"])
             trace.append({"tool": c["name"], "args": c["args"], "result": result, "chosen_by": routed_by})
             body = json.dumps(result, default=str)[: self.settings.tool_result_chars]
             self.messages.append({"role": "tool", "tool_call_id": c["id"], "name": c["name"], "content": body})
@@ -106,7 +116,7 @@ class LabAgent:
             self.messages.append({"role": "user", "content":
                                   f"Your last reply broke the safety rules ({reasons}). Rewrite it without that "
                                   "content, keep the rest, and offer a safe alternative."})
-            rewrite = (self.llm.chat(self.messages).get("content") or "").strip()
+            rewrite = _message_text(self.llm.chat(self.messages)).strip()
             self.messages = self.messages[:-2]  # don't keep the failed draft in the conversation
             still = guardrails.check(rewrite)
             reply.text = guardrails.scrub(rewrite, still) if still else rewrite
@@ -114,32 +124,125 @@ class LabAgent:
         return reply
 
 
-_INLINE = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>|```(?:json)?\s*(\{.*?\})\s*```|^\s*(\{.*\})\s*$", re.S)
+_INLINE = re.compile(r"<tool_call>\s*(.*?)\s*</tool_call>|```(?:json)?\s*(.*?)\s*```", re.S)
+
+
+def _message_text(message, default="The local model did not return usable response text. Please try again.") -> str:
+    if isinstance(message, dict) and isinstance(message.get("content"), str):
+        return message["content"]
+    return default
+
+
+def _rejected(code: str, message: str, name="invalid_tool_call") -> dict:
+    """No raw malformed arguments are copied into traces or fed back to the model."""
+    return {"id": _id(), "name": name, "args": None,
+            "validation_error": {"code": code, "message": message}}
+
+
+def _strict_json(text: str):
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate key")
+            result[key] = value
+        return result
+
+    def reject_constant(value):
+        raise ValueError("non-finite JSON")
+    return json.loads(text, object_pairs_hook=unique_pairs, parse_constant=reject_constant)
+
+
+def _parsed_call(name, args, known, *, arguments_present=True):
+    if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,63}", name):
+        return _rejected("invalid_tool_name", "A tool name must be a documented identifier.")
+    if name not in known:
+        return _rejected("unknown_tool", "Only the documented tools may be called.", name)
+    if not arguments_present:
+        return _rejected("missing_arguments", "Supply an explicit JSON argument object, including {} for a tool with no arguments.", name)
+    if isinstance(args, str):
+        if len(args) > MAX_TOOL_ARGUMENT_CHARS:
+            return _rejected("arguments_too_large", "Tool arguments exceed the size limit.", name)
+        try:
+            args = _strict_json(args)
+        except (ValueError, TypeError, RecursionError):
+            return _rejected("invalid_argument_json", "Tool arguments must be valid JSON with unique keys and finite numbers.", name)
+    if not isinstance(args, dict):
+        return _rejected("arguments_not_object", "Tool arguments must be a JSON object; the call was not executed.", name)
+    try:
+        encoded = json.dumps(args, allow_nan=False, ensure_ascii=False)
+        if len(encoded) > MAX_TOOL_ARGUMENT_CHARS:
+            return _rejected("arguments_too_large", "Tool arguments exceed the size limit.", name)
+        # Even a Python-supplied dict must have proper JSON string keys and values.
+        if any(not isinstance(key, str) for key in args):
+            raise ValueError("non-string key")
+        _strict_json(encoded)
+    except (ValueError, TypeError, RecursionError):
+        return _rejected("invalid_argument_json", "Tool arguments must contain only valid JSON values.", name)
+    return {"id": _id(), "name": name, "args": args}
 
 
 def _tool_calls(msg: dict, known: set[str]) -> list[dict]:
-    """Native tool calls, or a JSON tool call written into the text (small models do this)."""
-    calls = []
-    for tc in msg.get("tool_calls") or []:
-        fn = tc.get("function", {})
-        args = fn.get("arguments") or {}
-        if isinstance(args, str):
-            try:
-                args = json.loads(args or "{}")
-            except json.JSONDecodeError:
-                args = {}
-        calls.append({"id": tc.get("id") or _id(), "name": fn.get("name"), "args": args})
-    if calls:
+    """Parse bounded native/inline calls; rejected calls produce errors, never defaults.
+
+    A malformed call is returned as a non-executable error so the model can correct
+    it. More than five calls rejects the entire reply instead of running a prefix.
+    """
+    if not isinstance(msg, dict):
+        return [_rejected("invalid_message", "The local model response must be an object.")]
+    native = msg.get("tool_calls")
+    if native is not None and not isinstance(native, list):
+        return [_rejected("invalid_call_list", "tool_calls must be a JSON array.")]
+    if native:
+        if len(native) > MAX_CALLS_PER_REPLY:
+            return [_rejected("too_many_tool_calls", "At most five tool calls are allowed per reply; no calls from this reply were executed.")]
+        calls = []
+        for call in native:
+            if not isinstance(call, dict) or call.get("type", "function") != "function" or not isinstance(call.get("function"), dict):
+                calls.append(_rejected("invalid_call", "Each tool call must contain a function object."))
+                continue
+            fn = call["function"]
+            calls.append(_parsed_call(fn.get("name"), fn.get("arguments"), known,
+                                      arguments_present="arguments" in fn))
         return calls
-    content = msg.get("content") or ""
-    for m in _INLINE.finditer(content):
+    content = msg.get("content")
+    if content is None:
+        return []
+    if not isinstance(content, str):
+        return [_rejected("invalid_content", "The local model response content must be text.")]
+    if len(content) > MAX_TOOL_CONTENT_CHARS:
+        return [_rejected("content_too_large", "The local model response exceeded the tool-parsing limit.")]
+    if content.count("<tool_call>") != content.count("</tool_call>"):
+        return [_rejected("incomplete_inline_call", "Inline tool-call tags must be complete; no calls from this reply were executed.")]
+    candidates = [(match.group(1) if match.group(1) is not None else match.group(2),
+                   match.group(1) is not None) for match in _INLINE.finditer(content)]
+    if not candidates and content.strip().startswith("{"):
+        candidates = [(content.strip(), False)]
+    if len(candidates) > MAX_CALLS_PER_REPLY:
+        return [_rejected("too_many_tool_calls", "At most five tool calls are allowed per reply; no calls from this reply were executed.")]
+    calls = []
+    for payload, explicit in candidates:
         try:
-            obj = json.loads(next(g for g in m.groups() if g))
-        except (json.JSONDecodeError, StopIteration):
+            obj = _strict_json(payload)
+        except (ValueError, TypeError, RecursionError):
+            if explicit or re.search(r'"(?:name|tool)"\s*:', payload):
+                calls.append(_rejected("invalid_call_json", "Inline tool calls must be valid JSON objects."))
             continue
-        name = obj.get("name") or obj.get("tool")
-        if name in known:
-            calls.append({"id": _id(), "name": name, "args": obj.get("arguments") or obj.get("parameters") or {}})
+        if not isinstance(obj, dict):
+            if explicit:
+                calls.append(_rejected("call_not_object", "An inline tool call must be a JSON object."))
+            continue
+        if not explicit and "name" not in obj and "tool" not in obj:
+            continue  # ordinary JSON examples are not execution requests
+        if "name" in obj and "tool" in obj:
+            calls.append(_rejected("ambiguous_tool_name", "Use either name or tool, never both."))
+            continue
+        name = obj.get("name") if "name" in obj else obj.get("tool")
+        if "arguments" in obj and "parameters" in obj:
+            calls.append(_rejected("ambiguous_arguments", "Use either arguments or parameters, never both."))
+            continue
+        field = "arguments" if "arguments" in obj else "parameters"
+        calls.append(_parsed_call(name, obj.get(field), known, arguments_present=field in obj))
     return calls
 
 

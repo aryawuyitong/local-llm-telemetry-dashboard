@@ -22,25 +22,26 @@
   This page needs the Lab Helper. Double-click <strong>Start Lab Helper</strong> in the lab folder; it opens the lab for you.
 </div>
 
+<div class="banner">Manual installation mode. Windows awaits physical-device validation. Stop if a step needs admin access or an OS security bypass.</div>
 <main class="layout">
   <section class="content">
 
     <div id="view-learn" class="view">
-      <p class="eyebrow">No terminal needed</p>
+      <p class="eyebrow">A guided manual lab</p>
       <h1>Run an AI model on your own laptop</h1>
-      <p class="lead">The lab assistant checks your laptop, picks a model that fits what you want to do, and walks you through each step. You approve every step, and you see exactly what it does.</p>
+      <p class="lead">Inspect your laptop, manually install a small local model, predict its resource use, then measure it. Static instructions work before the assistant has a local model to use.</p>
       <div class="cards3">
         <div class="card"><h3>Private</h3><p>The model runs on this laptop. Your questions never leave it.</p></div>
-        <div class="card"><h3>You're in control</h3><p>Nothing runs until you click Approve. No admin password, ever.</p></div>
-        <div class="card"><h3>You learn how it works</h3><p>Each step shows the terminal command it replaces, so it's never a black box.</p></div>
+        <div class="card"><h3>You're in control</h3><p>Installation and downloads stay manual. The helper runs only bounded checks and experiments that you choose.</p></div>
+        <div class="card"><h3>You learn how it works</h3><p>Each step explains the runtime, model files and commands you perform yourself.</p></div>
       </div>
       <h2>Five ideas you'll see</h2>
       <dl class="terms">
-        <dt>Parameters (e.g. 3B)</dt><dd>The model's learned numbers. More parameters usually means better answers, but a bigger, slower model.</dd>
-        <dt>Quantization (Q4)</dt><dd>Storing each number in about 4 bits instead of 16, so the file is roughly 4 times smaller with a small quality cost.</dd>
+        <dt>Parameters (e.g. 3B)</dt><dd>The model's learned numbers. Size affects memory and computation; answer quality still needs evaluation.</dd>
+        <dt>Quantization (Q4)</dt><dd>Representing weights with fewer bits to reduce storage and memory. File size and quality depend on the exact artifact and method.</dd>
         <dt>RAM</dt><dd>The model must fit in your free memory while it runs. If it doesn't fit, it crashes or crawls.</dd>
-        <dt>Tokens per second</dt><dd>How fast it writes. A token is about three quarters of a word; people read about 5 per second.</dd>
-        <dt>Time to first token</dt><dd>How long you wait before the first word appears. Longer prompts make it longer.</dd>
+        <dt>Tokens per second</dt><dd>Generated tokens divided by runtime-reported generation time. Tokens are text pieces whose size depends on language and tokenizer.</dd>
+        <dt>First-text latency</dt><dd>The wait until the first nonempty response text. A stream chunk can contain several tokens, so this is a proxy for exact TTFT.</dd>
       </dl>
       <button class="btn primary big" data-goto="deploy">Start: check my laptop</button>
     </div>
@@ -64,7 +65,7 @@
 
     <div id="view-results" class="view" hidden>
       <h1>Results</h1>
-      <p class="lead">Every measurement is saved on this laptop. Download the file and upload it to the team dashboard to compare laptops.</p>
+      <p class="lead">Measurements stay on this laptop. Download the latest anonymous session JSON and open it in the separate portal, which reads the file inside your browser.</p>
       <div id="results-body"></div>
     </div>
   </section>
@@ -72,11 +73,11 @@
   <aside class="assistant" aria-label="Lab assistant">
     <header class="a-head">
       <div><strong>Lab assistant</strong><div class="small muted" id="a-model">Starting…</div></div>
-      <label class="switch" title="Only turn this off to compare behaviour in a demo">
-        <input type="checkbox" id="safety" checked><span class="track"></span><span class="small">Safety layer</span>
+      <label class="switch" title="Safety stays on in the live lab; use the isolated evaluation harness for comparisons.">
+        <input type="checkbox" id="safety" checked disabled><span class="track"></span><span class="small">Safety on</span>
       </label>
     </header>
-    <div id="safety-off" class="note bad small" hidden>Safety layer is off. Use this only to show the with/without comparison.</div>
+    <div id="safety-off" class="note bad small" hidden>Live safety stays on. Comparisons use an isolated text-only evaluation harness.</div>
     <div id="msgs" class="msgs" aria-live="polite"></div>
     <div id="suggest" class="chips"></div>
     <form id="a-form" class="a-form">

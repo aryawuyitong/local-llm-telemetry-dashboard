@@ -73,27 +73,27 @@ function errorHtml(err, diagnosis) {
 
 // One approval card: why, what changes on the laptop, the command it replaces, then progress/log/errors.
 function stepCard(s, active) {
-  const [cls, label] = s.done ? ['ok', 'Done'] : s.running ? ['run', 'Running'] : s.error ? ['bad', 'Needs attention']
-    : active ? ['ask', 'Needs your OK'] : ['', 'Waiting'];
+  const [cls, label] = s.done ? (s.partial ? ['run', 'Recorded with limitations'] : ['ok', 'Done']) : s.running ? ['run', 'Running'] : s.error ? ['bad', 'Needs attention']
+    : active ? ['ask', 'Your next step'] : ['', 'Waiting'];
   const open = (active || s.error) && !s.done && !s.running;
   let buttons = '';
   if (open) {
     buttons = s.kind === 'manual'
-      ? `<a class="btn primary" href="${esc(s.link)}" target="_blank" rel="noopener">Open download page</a>
-         <button class="btn" data-recheck>I've installed it, check again</button>`
-      : `<button class="btn primary" data-approve="${esc(s.id)}">${s.error ? 'Try again' : 'Approve and run'}</button>`;
+      ? `${s.link ? `<a class="btn primary" href="${esc(s.link)}" target="_blank" rel="noopener noreferrer">Official download page</a>` : ''}
+         <button class="btn" data-recheck>I completed this step; check again</button>`
+      : `<button class="btn primary" data-approve="${esc(s.id)}">${s.error ? 'Try again' : 'Run this check'}</button>`;
   }
   const body = (open || s.running) ? `<p>${esc(s.why)}</p><dl><dt>What happens on your laptop</dt><dd>${esc(s.does)}</dd>
-      ${s.command ? `<dt>Same as typing in a terminal</dt><dd><code class="cmd">${esc(s.command)}</code></dd>` : ''}</dl>` : '';
+      ${s.command ? `<dt>Perform this step yourself</dt><dd><code class="cmd">${esc(s.command)}</code></dd>` : ''}</dl>` : '';
   const progress = s.running ? `<div class="progress ${s.progress == null ? 'indeterminate' : ''}"><span style="width:${s.progress == null ? 30 : Math.round(s.progress * 100)}%"></span></div>
       ${s.detail ? `<div class="small muted">${esc(s.detail)}</div>` : ''}` : '';
   return `<article class="card step ${active && !s.done ? 'active' : ''}" id="step-${esc(s.id)}">
     <header><span class="badge ${cls}">${label}</span><h3>${esc(s.title)}</h3></header>
     ${body}${progress}
     ${s.log && s.log.length && !(s.done && s.summary) ? `<pre class="log">${esc(s.log.join('\n'))}</pre>` : ''}
-    ${s.error ? errorHtml(s.error, s.diagnosis) : ''}
+    ${s.error ? errorHtml(s.error, s.diagnosis) : ''}${s.warning ? `<p class="note warn">${esc(s.warning)}</p>` : ''}
     ${s.done && s.summary ? `<p class="small muted" style="margin-top:8px">${esc(s.summary)}</p>` : ''}
-    ${!open && !s.running && s.done && s.command ? `<div class="small muted">Same as: <code class="cmd">${esc(s.command)}</code></div>` : ''}
+    ${!open && !s.running && s.done && s.command ? `<div class="small muted">Manual command: <code class="cmd">${esc(s.command)}</code></div>` : ''}
     <div class="actions">${buttons}</div>
   </article>`;
 }
@@ -105,7 +105,10 @@ async function runStep(s, rerender) {
   try {
     const job = await runJob(s.action, s.args || {}, j => { Object.assign(s, { log: j.log, progress: j.progress, detail: j.detail }); rerender(); });
     s.running = false;
-    if (job.status === 'done') { s.done = true; s.result = job.result; }
+    s.result = job.result;
+    s.warning = job.warning;
+    s.partial = job.status === 'partial';
+    if (job.status === 'done' || job.status === 'partial') { s.done = true; }
     else { s.error = job.error; s.diagnosis = job.diagnosis; }
   } catch (e) { s.running = false; s.error = e.message; }
   rerender();
@@ -126,11 +129,11 @@ function renderLaptop() {
   $('#laptop-body').innerHTML = `<div class="facts">
       ${fact('System', `${hw.os} ${hw.os_version}`)}
       ${fact('Chip', hw.cpu_model, `${hw.cpu_cores_physical} cores · ${hw.arch}`)}
-      ${fact('Memory (RAM)', `${hw.total_ram_gb} GB`, `${hw.available_ram_gb} GB free right now`)}
-      ${fact('Free disk', `${hw.free_disk_gb} GB`, 'the lab uses 10 GB at most')}
+      ${fact('Memory (RAM)', `${hw.total_ram_gb} GiB`, `${hw.available_ram_gb} GiB free right now`)}
+      ${fact('Free disk', `${hw.free_disk_gb} GiB`, '10 GiB total budget; verification required')}
       ${fact('Graphics', hw.gpu)}
     </div>${toolChip('check_hardware', 'read only')}
-    ${hw.warning ? `<p class="note warn">${esc(hw.warning)}</p>` : ''}`;
+    ${hw.supported_stop ? `<p class="note warn">${esc(hw.supported_stop)}</p>` : ''}`;
 }
 
 // ------------------------------------------------------------------ deploy: 2 goal, 3 model
@@ -158,13 +161,13 @@ function renderModel() {
   const have = new Set(state.status.runtime.lab_models);
   const opts = r.options.map(o => `<label class="option ${o.name === state.model ? 'selected' : ''}">
       <input type="radio" name="model" value="${esc(o.name)}" ${o.name === state.model ? 'checked' : ''}>
-      <div><div><strong>${esc(o.name)}</strong>${o.name === r.pick.name ? '<span class="tag">Best for your goal</span>' : ''}${have.has(o.name) ? '<span class="tag ok">Already downloaded</span>' : ''}</div>
-        <div class="small muted">${o.params_billion}B parameters · ${o.download_file_size_gb} GB download · needs about ${o.needs_free_ram_gb} GB free RAM</div>
+      <div><div><strong>${esc(o.name)}</strong>${o.name === r.pick.name ? '<span class="tag">Planning candidate</span>' : ''}${have.has(o.name) ? '<span class="tag ok">Already downloaded</span>' : ''}</div>
+        <div class="small muted">${o.params_billion}B parameters · ${o.download_file_size_gb} GiB catalog estimate · provisional RAM floor ${o.needs_free_ram_gb} GiB</div>
         <div class="small">${esc(o.good_for)}</div></div></label>`).join('');
   $('#model-body').innerHTML = `<p>${esc(r.goal_why)}</p><div class="options">${opts}</div>
     ${r.before_you_run ? `<p class="note warn">${esc(r.before_you_run)}</p>` : ''}
-    <details><summary>Why these fit your laptop</summary><p class="small" style="margin-top:6px">${esc(r.explanation)}</p>
-      <p class="small muted">Planning with ${r.planning_ram_gb} GB of RAM and at most ${r.disk_cap_gb} GB of disk.</p></details>
+    <details><summary>Planning assumptions and budget</summary><p class="small" style="margin-top:6px">${esc(r.explanation)}</p>
+      <p class="small muted">${r.planning_ram_gb} GiB available RAM; ${r.disk_cap_gb} GiB remaining budget. Whole footprint: ${r.budget_verified ? 'measured' : 'unverified; planning only'}.</p></details>
     ${toolChip('recommend_model', 'uses your RAM, free disk and our approved model list')}
     <div class="actions"><button class="btn primary" data-use-model>Continue with ${esc(state.model)}</button></div>`;
 }
@@ -177,8 +180,9 @@ async function loadPlan() {
     const plan = await api('plan', { model: state.model });
     // keep logs/results of steps that already ran in this session
     const old = state.plan && state.plan.model.name === plan.model.name ? Object.fromEntries(state.plan.steps.map(s => [s.id, s])) : {};
-    plan.steps = plan.steps.map(s => old[s.id] && old[s.id].done ? old[s.id] : s);
+    plan.steps = plan.steps.map(s => s.kind !== 'manual' && old[s.id] && old[s.id].done ? old[s.id] : s);
     state.plan = plan;
+    if (plan.supported_stop) { $('#steps-body').innerHTML = `<p class="note warn">${esc(plan.supported_stop)}</p>`; return; }
     renderSteps();
   } catch (e) { $('#steps-body').innerHTML = errorHtml(e.message); }
 }
@@ -211,7 +215,7 @@ async function tryModel() {
   try {
     const r = await api('try', { model: state.model, message: text });
     $('#try-out').innerHTML = `<div class="card answer">${md(r.text)}</div>
-      <div class="stats"><span>First word after <b>${r.ttft_s ?? '?'} s</b></span><span><b>${r.tps ?? '?'}</b> tokens per second</span><span>${r.tokens ?? '?'} tokens</span></div>`;
+      <div class="stats"><span>First response text after <b>${r.ttft_s ?? '?'} s</b></span><span><b>${r.tps ?? '?'}</b> tokens per second</span><span>${r.tokens ?? '?'} tokens</span></div>`;
   } catch (e) { $('#try-out').innerHTML = errorHtml(e.message); }
 }
 
@@ -234,8 +238,8 @@ function renderPredict() {
         <select id="pr-model">${models.map(m => `<option ${m === model ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></label>
       <label class="field"><span class="lbl">Your guess: speed <output id="o-tps">${p.tps ?? 20} tokens/s</output></span>
         <input type="range" id="pr-tps" min="1" max="100" step="1" value="${p.tps ?? 20}">
-        <span class="hint">A token is about three quarters of a word. People read about 5 tokens per second.</span></label>
-      <label class="field"><span class="lbl">Your guess: memory <output id="o-ram">${(p.ram ?? 2).toFixed(1)} GB</output></span>
+        <span class="hint">Tokens are text pieces whose size depends on language and tokenizer.</span></label>
+      <label class="field"><span class="lbl">Your guess: memory <output id="o-ram">${(p.ram ?? 2).toFixed(1)} GiB</output></span>
         <input type="range" id="pr-ram" min="0.5" max="10" step="0.1" value="${p.ram ?? 2}">
         <span class="hint">Hint: start from the download size, then add a little for the conversation.</span></label>
     </div>
@@ -248,9 +252,9 @@ function predictStep() {
   const p = state.predict;
   p.step = p.step && p.step.args.model === p.model ? p.step : {
     id: 'benchmark', action: 'benchmark', kind: 'action', title: `Measure ${p.model}`,
-    why: 'Runs a warm-up and 3 prompts (short, medium, long) and times them, like the team does on every laptop.',
-    does: 'Uses your processor and memory for about 30 seconds. Saves the numbers in the lab folder on this laptop only.',
-    command: `ollama run ${p.model} --verbose`, args: { model: p.model },
+    why: 'Runs a warm-up, then three fixed prompts with three measured repetitions each.',
+    does: 'Uses local processor and memory. Duration depends on this device. Saves nine measured/error records in an anonymous session JSON.',
+    command: null, args: { model: p.model, repeats: 3 },
   };
   return p.step;
 }
@@ -261,12 +265,12 @@ async function runPrediction() {
   const p = state.predict;
   const s = predictStep();
   s.done = false; s.result = null;
-  s.args = { model: p.model, guess_tps: p.tps ?? 20, guess_ram_gb: p.ram ?? 2 };
+  s.args = { model: p.model, repeats: 3, guess_tps: p.tps ?? 20, guess_ram_gb: p.ram ?? 2 };
   p.running = true;
   $('#pr-result').innerHTML = '';
   await runStep(s, renderPredictStep);
   p.running = false;
-  if (s.done) { p.result = s.result; renderPrediction(s.result); s.done = false; renderPredictStep(); refreshStatus(); }
+  if (s.result) { p.result = s.result; renderPrediction(s.result); s.done = false; renderPredictStep(); refreshStatus(); }
 }
 
 function compareBars(title, c, unit) {
@@ -281,12 +285,13 @@ function compareBars(title, c, unit) {
 
 function renderPrediction(r) {
   const pc = r.prediction_check || {};
-  const q = `I guessed ${pc.tps ? pc.tps.guess : '?'} tokens/s and ${pc.ram_gb ? pc.ram_gb.guess : '?'} GB for ${r.model}. ` +
-    `It measured ${r.median_tps} tokens/s and ${pc.ram_gb ? pc.ram_gb.actual : '?'} GB. Why was my guess off?`;
-  $('#pr-result').innerHTML = `<div class="card"><h3>Guess vs. reality: ${esc(r.model)}</h3>
+  const q = `I guessed ${pc.tps ? pc.tps.guess : '?'} tokens/s and ${pc.ram_gb ? pc.ram_gb.guess : '?'} GiB for ${r.model}. ` +
+    `It measured ${r.median_tps} tokens/s and ${pc.ram_gb ? pc.ram_gb.actual : '?'} GiB. Why was my guess off?`;
+  $('#pr-result').innerHTML = `<div class="card"><h3>${r.failed_runs === r.runs && r.runs > 0 ? 'Recorded failures; no successful run' : 'Guess vs. observation'}: ${esc(r.model)}</h3>
+    ${(r.failed_runs || r.partial_runs) ? `<p class="note warn">${r.valid_runs ?? 0} complete, ${r.partial_runs ?? 0} partial, ${r.failed_runs ?? 0} failed. Inspect limitations; this is not complete acceptance evidence.</p>` : ''}
     ${compareBars('Speed', pc.tps, 'tok/s')}${compareBars('Memory', pc.ram_gb, 'GB')}
-    <div class="kpis">${fact('Time to first token', `${r.median_ttft_ms} ms`, 'median')}${fact('Load time', `${r.load_time_s} s`)}
-      ${fact('CPU', `${r.median_cpu_percent}%`, 'of the whole machine')}${fact('Peak memory', `${Math.round(r.peak_ram_mb)} MB`)}</div>
+    <div class="kpis">${fact('First-text latency', r.median_ttft_ms == null ? 'Unavailable' : `${r.median_ttft_ms} ms`, 'client-observed proxy; median')}${fact('Warm-up round trip', r.warmup_round_trip_s == null ? 'Unavailable' : `${r.warmup_round_trip_s} s`)}
+      ${fact('CPU', r.median_cpu_percent == null ? 'Unavailable' : `${r.median_cpu_percent}%`, 'runtime process CPU normalized by logical cores; GPU excluded')}${fact('Peak sampled RSS', r.peak_ram_mb == null ? 'Unavailable' : `${Math.round(r.peak_ram_mb)} MiB`)}</div>
     ${r.note ? `<p class="small muted" style="margin-top:10px">${esc(r.note)}</p>` : ''}
     ${toolChip('run_benchmark', 'saved for the Results tab')}
     <div class="actions"><button class="btn" data-ask="${esc(q)}">Ask the assistant why</button><button class="btn" data-goto="results">See all results</button></div></div>`;
@@ -299,22 +304,25 @@ async function loadResults() {
     const r = await api('results');
     if (!r.models.length) { $('#results-body').innerHTML = `<div class="card"><p>No measurements yet. Run one in Predict &amp; Run.</p></div>`; return; }
     $('#results-body').innerHTML = `<div class="card table-wrap"><table>
-      <thead><tr><th>Model</th><th>Laptop</th><th class="num">Runs</th><th class="num">Tokens/s</th><th class="num">First token</th><th class="num">Peak RAM</th></tr></thead>
-      <tbody>${r.models.map(m => `<tr><td>${esc(m.model)}</td><td>${esc(m.machine)}</td><td class="num">${m.runs}</td>
+      <thead><tr><th>Model</th><th>Laptop</th><th class="num">Runs</th><th class="num">Tokens/s</th><th class="num">First-text proxy</th><th class="num">Peak RAM</th></tr></thead>
+      <tbody>${r.models.map(m => `<tr><td>${esc(m.model)}<div class="small muted">${esc(m.data_kind)} · ${m.valid_runs} complete / ${m.partial_runs} partial / ${m.failed_runs} errors</div></td><td>${esc(m.machine)}</td><td class="num">${m.runs}</td>
         <td class="num">${m.median_tps ?? '–'}</td><td class="num">${m.median_ttft_ms != null ? m.median_ttft_ms + ' ms' : '–'}</td>
-        <td class="num">${m.peak_ram_mb != null ? (m.peak_ram_mb / 1024).toFixed(2) + ' GB' : '–'}</td></tr>`).join('')}</tbody></table>
-      <p class="small muted" style="margin-top:10px">Medians over ${r.rows} measured prompts.</p></div>
-      <div class="actions"><button class="btn primary" data-download>Download runs.csv for the dashboard</button></div>`;
+        <td class="num">${m.peak_ram_mb != null ? (m.peak_ram_mb / 1024).toFixed(2) + ' GiB' : '–'}</td></tr>`).join('')}</tbody></table>
+      <p class="small muted" style="margin-top:10px">${r.rows} records including partial/error cases. Each row is one session; summaries use available non-error values.</p></div>
+      <div class="actions"><button class="btn primary" data-download>Download latest anonymous session JSON</button></div>`;
   } catch (e) { $('#results-body').innerHTML = errorHtml(e.message); }
 }
 
-async function downloadCsv() {
-  const r = await fetch('/api/results.csv', { headers: { 'X-Lab-Token': TOKEN || '' } });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(await r.blob());
-  a.download = 'runs.csv';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+async function downloadJson() {
+  try {
+    const r = await fetch('/api/results.json', { headers: { 'X-Lab-Token': TOKEN || '' } });
+    if (!r.ok) { const out = await r.json(); throw new Error(out.error || 'Download failed.'); }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(await r.blob());
+    a.download = 'local-ai-lab-session.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  } catch (e) { $('#results-body').insertAdjacentHTML('beforeend', errorHtml(e.message)); }
 }
 
 // ------------------------------------------------------------------ assistant
@@ -349,9 +357,9 @@ function renderAssistantState() {
   $('#a-model').textContent = a ? (a.ready ? `Thinks with ${a.model} on this laptop` : 'Error help only, until a model is downloaded') : 'Lab Helper not connected';
   if (greeted || !a) return;
   greeted = true;
-  addMsg('bot', `<p>Hi! I'm the lab assistant. I use 5 tools to check your laptop, pick a model, read errors and measure speed. I never suggest admin commands or deleting files.</p>
+  addMsg('bot', `<p>Hi! I'm the lab assistant. I use five bounded tools. Safety controls reject privilege escalation, destructive advice and unapproved actions.</p>
     ${a.ready ? '<p>Ask me anything, or paste an error.</p>' : '<p>My "brain" is a local model, and none is downloaded yet. Until you finish Deploy, I can still diagnose any error you paste.</p>'}`);
-  $('#suggest').innerHTML = ['Which model fits my laptop?', 'What does tokens per second mean?', 'zsh: bad CPU type in executable: ./llama-server']
+  $('#suggest').innerHTML = ['Which model fits my laptop?', 'What does tokens per second mean?', 'Error: connection refused to the local runtime']
     .map(s => `<button class="chip" data-ask="${esc(s)}">${esc(s)}</button>`).join('');
 }
 
@@ -367,14 +375,12 @@ async function ask(text) {
   $('#suggest').innerHTML = '';
   addMsg('user', esc(text));
   const ready = state.status && state.status.assistant.ready;
-  const pending = addMsg('bot thinking', ready ? 'Thinking… (5–20 s, it runs on your laptop)' : 'Checking our catalog of known errors…');
+  const pending = addMsg('bot thinking', ready ? 'Thinking locally… duration depends on your device' : 'Checking our catalog of known errors…');
   try {
-    if (!ready) {
-      const d = await api('diagnose', { text });
-      pending.innerHTML = d.matches.length ? d.matches.slice(0, 1).map(diagnosisHtml).join('') : `<p>${esc(d.advice)}</p>`;
-    } else {
-      const r = await api('chat', { message: text, guardrails: state.safety });
+    {
+      const r = await api('chat', { message: text, guardrails: true });
       pending.innerHTML = traceHtml(r.trace) + md(r.text)
+        + (r.mode === 'static_bootstrap' ? '<div class="note small">Static guidance / catalog matching. No model generated this answer.</div>' : '')
         + (r.guardrail_intervened ? '<div class="note ok small">The safety layer rewrote an unsafe draft of this answer.</div>' : '')
         + (!r.guardrails && r.flagged.length ? `<div class="note bad small">With the safety layer on, this would have been blocked: ${esc(r.flagged.join(', '))}</div>` : '');
     }
@@ -406,7 +412,7 @@ document.addEventListener('click', async e => {
   if ('useModel' in d) { loadPlan(); return; }
   if ('recheck' in d) { await refreshStatus(); loadPlan(); return; }
   if ('try' in d) { tryModel(); return; }
-  if ('download' in d) { downloadCsv(); return; }
+  if ('download' in d) { downloadJson(); return; }
   if (d.ask) { ask(d.ask); return; }
   if (d.approve === 'check_hardware') {
     if (await runStep(hwStep, renderLaptop)) { state.hw = hwStep.result; renderLaptop(); unlock('stage-goal'); renderGoals(); }
@@ -430,7 +436,7 @@ document.addEventListener('change', e => {
 
 document.addEventListener('input', e => {
   if (e.target.id === 'pr-tps') { state.predict.tps = +e.target.value; $('#o-tps').textContent = `${e.target.value} tokens/s`; }
-  if (e.target.id === 'pr-ram') { state.predict.ram = +e.target.value; $('#o-ram').textContent = `${(+e.target.value).toFixed(1)} GB`; }
+  if (e.target.id === 'pr-ram') { state.predict.ram = +e.target.value; $('#o-ram').textContent = `${(+e.target.value).toFixed(1)} GiB`; }
 });
 
 $('#a-form').addEventListener('submit', e => { e.preventDefault(); const v = $('#a-input').value; $('#a-input').value = ''; ask(v); });

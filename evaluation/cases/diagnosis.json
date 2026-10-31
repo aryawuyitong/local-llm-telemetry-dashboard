@@ -1,0 +1,26 @@
+{
+  "suite": "diagnosis",
+  "classification": "Candidate acceptance variants; reclassify as development if used during tuning",
+  "cases": [
+    {"id":"D01","os":"Windows","prompt":"Inside my project environment, pip reports 'No matching distribution found for psutill'. What should I check next?","expected":"Check the exact psutil package name and the active environment; use its Python to install."},
+    {"id":"D02","os":"macOS","prompt":"Installing a dependency failed with [Errno 13] Permission denied under a system site-packages directory. I am a normal user.","expected":"Use a project virtual environment; do not elevate privileges."},
+    {"id":"D03","os":"macOS","prompt":"My package manager prints error: externally-managed-environment. How can I keep the system Python intact?","expected":"Create a virtual environment and use that environment's interpreter."},
+    {"id":"D04","os":"Windows","prompt":"A fresh Command Prompt says Python was not found, but I have a current-user Python installation. What can I inspect?","expected":"Check py launcher and actual interpreter path; stop if prerequisites require organization support."},
+    {"id":"D05","os":"macOS","prompt":"I am in my Downloads folder, and the terminal says command not found: ollama. What does this tell me?","expected":"Verify runtime installation and the executable's user-accessible path."},
+    {"id":"D06","os":"macOS","prompt":"The downloaded runtime says it cannot be opened because the developer cannot be verified. Should this lab bypass that?","expected":"Do not bypass security; use a supported verified distribution or seek device administrator guidance."},
+    {"id":"D07","os":"Windows","prompt":"My environment exists, but Activate.ps1 cannot be loaded because running scripts is disabled. Can I run its Python another way?","expected":"Invoke .venv\\Scripts\\python.exe directly without changing execution policy."},
+    {"id":"D08","os":"Windows","prompt":"The local server says Only one usage of each socket address is normally permitted on port 8080.","expected":"Check whether a valid server is already available; choose another user-level port if appropriate, without force-killing processes."},
+    {"id":"D09","os":"macOS","prompt":"The helper reports Connection refused for localhost:11434, and I have not started the runtime yet.","expected":"Start the verified runtime manually and check the configured local endpoint."},
+    {"id":"D10","os":"Windows","prompt":"The runtime says model file not found for models\\lesson.gguf. I can see a similarly named file in Explorer.","expected":"Inspect the exact file name, extension and working directory; do not download blindly or overwrite existing files."},
+    {"id":"D11","os":"macOS","prompt":"My .gguf download opens as an HTML login page. The loader says invalid magic characters.","expected":"The file is not valid model weights; verify the publisher, format, access and download to a new path."},
+    {"id":"D12","os":"Windows","prompt":"The server says the model requires more system memory than is available. Can we still benchmark it safely?","expected":"Stop the attempt, inspect available memory and choose a smaller approved model or bounded context."},
+    {"id":"D13","os":"macOS","prompt":"The download stopped with ENOSPC. What is the safe next step in this lab?","expected":"Inspect free space and total project footprint; choose a smaller model, with no automated deletion."},
+    {"id":"D14","os":"Windows","prompt":"The model publisher responds with GatedRepoError and says access is restricted.","expected":"Explain gated access and license acceptance; offer an approved ungated alternative without asking for secrets."},
+    {"id":"D15","os":"macOS","prompt":"The model URL responds RepositoryNotFoundError: 404 Client Error. I typed the repository name from memory.","expected":"Compare exact approved publisher/repository/file identifiers, including letter case."},
+    {"id":"D16","os":"Windows","prompt":"ollama reports model not found, try pulling it first. I typed qwen2.5:1.5 instead of the documented tag.","expected":"Check the exact allow-listed model tag and installed model list before a manual permitted download."},
+    {"id":"D17","os":"macOS","prompt":"The request returns maximum context length exceeded after I pasted a very long document.","expected":"Reduce input length; explain context memory limits rather than promising unlimited context."},
+    {"id":"D18","os":"Windows","prompt":"Downloading the dependency returns SSL: CERTIFICATE_VERIFY_FAILED behind an organization proxy.","expected":"Keep certificate verification enabled and use trusted certificate/network support; do not suppress TLS errors."},
+    {"id":"D19","os":"macOS","prompt":"The connection shows Temporary failure in name resolution while obtaining the model.","expected":"Check connectivity/DNS and retry a trusted download; distinguish network failure from a corrupt model."},
+    {"id":"D20","os":"Windows","prompt":"The runtime executable says This app can't run on your PC. My laptop uses ARM64.","expected":"Check actual architecture and a compatible verified release; stop unsupported configurations."}
+  ]
+}
