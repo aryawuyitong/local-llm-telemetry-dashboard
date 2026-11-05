@@ -443,13 +443,14 @@ async function confirmAuto() {
   if (!p || !p.confirm_code || !$('#auto-ack').checked) return;
   auto.plan = null; // the code is single use
   auto.model = p.model.name;
+  auto.size = p.model.download_file_size_gb;
   try {
     auto.job = await api('auto/start', { confirm_code: p.confirm_code });
     renderAutoJob();
     while (auto.job.status === 'running') {
       await sleep(800);
       auto.job = await api('jobs/' + auto.job.id);
-      renderAutoJob();
+      if (auto.job.status === 'running') renderAutoJob();
     }
     await refreshStatus();
     renderAutoJob();
@@ -474,13 +475,36 @@ function renderAutoJob() {
   const r = j.result;
   state.model = r.model;
   if ($('#auto-try-input')) return;
-  $('#auto-body').innerHTML = `<p class="note ok"><strong>${esc(r.model)} is ready.</strong> ${r.pulled ? 'Downloaded, verified' : 'Verified'} and answered in ${esc(r.seconds)} s: "${esc(r.reply)}"</p>
-    <h3>Chat with ${esc(r.model)}</h3><p class="small muted">Runs on this laptop; nothing leaves your computer.</p>
-    <div class="row"><textarea id="auto-try-input" rows="2" placeholder="Explain what RAM is in two sentences."></textarea>
-      <button class="btn primary" data-auto-try>Send</button></div>
-    <div id="auto-try-out"></div>
-    <div class="actions"><button class="btn" data-goto="predict">Next: predict and measure its speed</button></div>`;
-  $('#auto-try-input').focus();
+  renderAutoDone(r);
+}
+
+// Finish screen: say plainly that the model is ready, where to use it, and where it lives.
+function renderAutoDone(r) {
+  const a = state.status && state.status.assistant;
+  const runCmd = `ollama run ${r.model}`;
+  const store = isMac ? '~/.ollama/models' : '%USERPROFILE%\\.ollama\\models';
+  const appHint = isMac ? 'Open Ollama from Applications (or its menu-bar icon)' : 'Open Ollama from the Start menu (or its icon by the clock)';
+  const size = auto.size ? ` It takes about ${esc(auto.size)} GiB.` : '';
+  $('#auto-body').innerHTML = `<div class="auto-done" id="auto-done">
+      <p class="note ok done-head"><strong>✓ ${esc(r.model)} is ready on this laptop.</strong> ${r.pulled ? 'Downloaded, verified' : 'Verified'} and answered in ${esc(r.seconds)} s: "${esc(r.reply)}"</p>
+      <h3>Use it right here</h3>
+      <p class="small muted">Type a message and press Enter. It runs on this laptop; nothing leaves your computer.</p>
+      <div class="row"><textarea id="auto-try-input" rows="2" placeholder="Explain what RAM is in two sentences."></textarea>
+        <button class="btn primary" data-auto-try>Send</button></div>
+      <div id="auto-try-out"></div>
+      <h3>Other ways to use ${esc(r.model)}</h3>
+      <div class="ways">
+        <div class="way"><strong>Ollama app</strong><p>${appHint}, choose <b>${esc(r.model)}</b> in its model menu and chat.</p></div>
+        <div class="way"><strong>Terminal</strong><p>Run this in a terminal to chat there:</p>
+          <code class="cmd">${esc(runCmd)}</code> <button class="btn small" data-copy-command="${esc(runCmd)}">Copy command</button></div>
+        <div class="way"><strong>This lab</strong><p>${a && a.ready && a.model === r.model ? `The <b>Lab assistant</b> on the right now thinks with ${esc(r.model)}. ` : ''}<b>Predict &amp; Run</b> measures its speed and memory.</p></div>
+      </div>
+      <p class="small muted">Where it is: Ollama keeps model files in <code>${esc(store)}</code> by default.${size} To remove it later, run <code>ollama rm ${esc(r.model)}</code>.</p>
+      <div class="actions"><button class="btn" data-goto="predict">Next: predict and measure its speed</button></div></div>`;
+  if (a && a.ready && a.model === r.model) addMsg('bot', `<p><strong>${esc(r.model)} is ready.</strong> I now think with it on this laptop. Ask me anything.</p>`);
+  if ($('#view-learn').hidden) show('learn');
+  $('#auto-done').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('#auto-try-input').focus({ preventScroll: true });
 }
 
 async function autoTry() {
@@ -622,6 +646,9 @@ document.addEventListener('input', e => {
 });
 
 $('#a-form').addEventListener('submit', e => { e.preventDefault(); const v = $('#a-input').value; $('#a-input').value = ''; ask(v); });
+document.addEventListener('keydown', e => {
+  if (e.target.id === 'auto-try-input' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); autoTry(); }
+});
 $('#a-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#a-form').requestSubmit(); } });
 
 (async function init() {
