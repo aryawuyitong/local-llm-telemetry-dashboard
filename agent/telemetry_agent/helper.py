@@ -2,8 +2,11 @@
 
 Run from the agent folder: python -m telemetry_agent.helper
 A random launch token stays in the URL fragment and is required on every API call.
-The helper never installs software, starts a runtime, downloads a model, executes
-a browser/model-selected shell command, or disables an OS security control.
+The helper never installs software, starts a runtime, executes a browser/model-
+selected shell command, or disables an OS security control. The default path is
+manual. The optional Auto setup can ask the already-running local Ollama runtime
+to download one allow-listed model, but only after the learner confirms a plan
+that the server issued (single-use confirmation code, short expiry).
 """
 from __future__ import annotations
 
@@ -38,6 +41,7 @@ CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; c
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
        "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
 MAX_BODY, MAX_EXPORT_BYTES = 64 * 1024, 10 * 1024**2
+AUTO_CONFIRM_SECONDS = 300
 OLLAMA_DOWNLOAD = "https://ollama.com/download"
 GOALS = {
     "try": {"label": "Try a small model", "detail": "Start with a smaller candidate.", "prefer": "faster_option",
@@ -93,11 +97,13 @@ class Lab:
         self._jobs_lock = threading.RLock()
         self._operation_lock = threading.Lock()
         self._chat_lock = threading.Lock()
+        self._auto_pending = None  # (code, model, expires_monotonic)
+        self._auto_lock = threading.Lock()
 
     def status(self):
         runtime = self.runtime_state()
         model = self._agent_model(runtime["lab_models"])
-        return {"runtime": runtime, "installation_mode": "manual",
+        return {"runtime": runtime, "installation_mode": "manual", "auto_setup": "optional, requires confirmation",
                 "assistant": {"ready": bool(model), "model": model, "wanted_model": self.settings.agent_model,
                               "guardrails_required": True, "comparison_mode": "Use the isolated text-only evaluation harness."},
                 "platform_validation": "Windows implementation has automated tests, but no physical Windows validation is claimed.",
@@ -182,6 +188,9 @@ class Lab:
                 validate_tool_args("run_benchmark", {"model": args["model"]})
         except ValueError as exc:
             raise BadRequest(str(exc)) from exc
+        return self._launch(action, args)
+
+    def _launch(self, action, args):
         with self._jobs_lock:
             for job in self.jobs.values():
                 if job["status"] == "running" and job["action"] == action and job["args"] == args:
@@ -199,6 +208,98 @@ class Lab:
             self.jobs[job["id"]] = job
             threading.Thread(target=self._run_job, args=(job,), daemon=True).start()
             return copy.deepcopy(job)
+
+
+    # ------------------------------------------------------------ optional Auto setup
+    def auto_plan(self, goal="study"):
+        """Read-only: pick a model and describe exactly what Auto would do.
+
+        Returns a single-use confirmation code only when every precondition holds.
+        Nothing is downloaded or run until auto_start receives that code.
+        """
+        if not isinstance(goal, str) or goal not in GOALS:
+            raise BadRequest("Choose one of the listed goals.")
+        rt = self.runtime_state()
+        base = {"goal": goal, "goal_label": GOALS[goal]["label"], "confirm_code": None,
+                "expires_in_s": None, "manual_alternative": "Use the Deploy tab to do each step yourself."}
+        if self.settings.runtime != "ollama":
+            return {**base, "stop": "Auto setup supports the Ollama runtime only."}
+        if not rt["installed"]:
+            return {**base, "stop": "Ollama is not installed. Auto setup never installs programs: install it yourself from the official page, open it, then press Auto again.",
+                    "link": OLLAMA_DOWNLOAD}
+        if not rt["running"]:
+            return {**base, "stop": "Ollama is installed but not running. Open the Ollama app (or run `ollama serve`), then press Auto again."}
+        hw = self.tools.check_hardware()
+        if hw.get("running_as_admin"):
+            return {**base, "stop": "This helper is running with administrator privileges. Restart it from a standard user account."}
+        rec = self.recommend(goal)
+        pick = rec.get("pick")
+        if not pick:
+            return {**base, "stop": rec.get("explanation") or "No approved model fits this laptop right now."}
+        model = pick["name"]
+        catalog = self.allowed[model]
+        installed = model in rt["models"]
+        size = catalog["size_gb"]
+        if not installed and hw["free_disk_gb"] - size < 2:
+            return {**base, "stop": f"Downloading {model} (about {size} GiB) would leave less than the 2 GiB disk reserve. Free space, then try again."}
+        steps = ([] if installed else [f"Ask your local Ollama to download {model} (about {size} GiB) from Ollama's model registry."]) + [
+            "Verify the runtime, exact model tag, digest and the 10 GiB project budget.",
+            "Run a short first prompt to confirm the model answers.",
+            "Open a chat box for the model on this page."]
+        code = secrets.token_urlsafe(18)
+        with self._auto_lock:
+            self._auto_pending = (code, model, time.monotonic() + AUTO_CONFIRM_SECONDS)
+        return {**base, "model": _brief(catalog), "already_installed": installed,
+                "download_gib_estimate": 0 if installed else size, "free_disk_gib": hw["free_disk_gb"],
+                "available_ram_gib": hw["available_ram_gb"],
+                "license_note": ("This model's publisher (Meta) license applies; review it before use." if catalog.get("license_gate")
+                                 else "Review the model's published license before use."),
+                "source": "Downloaded by your local Ollama from its model registry; Ollama verifies each file's digest.",
+                "security_note": ("Auto is less transparent than doing each step yourself: you approve one plan instead of each command. "
+                                  "It never installs programs, runs shell commands, needs admin rights, or deletes files."),
+                "goal_why": rec.get("goal_why"), "steps": steps,
+                "confirm_code": code, "expires_in_s": AUTO_CONFIRM_SECONDS}
+
+    def auto_start(self, confirm_code):
+        """Consume the confirmation code and run the confirmed plan as one job."""
+        if not isinstance(confirm_code, str) or not 8 <= len(confirm_code) <= 64:
+            raise BadRequest("Confirm the Auto plan first.")
+        with self._auto_lock:
+            pending, self._auto_pending = self._auto_pending, None
+        if (pending is None or time.monotonic() > pending[2]
+                or not secrets.compare_digest(confirm_code.encode(), pending[0].encode())):
+            raise BadRequest("This confirmation is missing, expired or already used. Press Auto again to review a fresh plan.")
+        model = pending[1]
+        self._allowed_model(model)
+        return self._launch("auto", {"model": model})
+
+    def _do_auto(self, job, model):
+        catalog = self._allowed_model(model)
+        pulled = False
+        if model not in self.runtime_state()["models"]:
+            hw = self.tools.check_hardware()
+            if hw["free_disk_gb"] - catalog["size_gb"] < 2:
+                raise RuntimeError("Not enough free disk for this download plus the 2 GiB reserve.")
+            job["log"].append(f"Downloading {model} through the local Ollama runtime (confirmed by you).")
+
+            def progress(status, done, total):
+                with self._jobs_lock:
+                    job["detail"] = "Download: " + (status or "working")
+                    job["progress"] = round(done / total * 0.8, 3) if done is not None and total else job["progress"]
+            ChatClient(self.settings.base_url, model).pull(model, progress)
+            pulled = True
+            job["log"].append("Download finished.")
+        with self._jobs_lock:
+            job.update(progress=0.85, detail="Verifying the runtime, model digest and project budget")
+        job["log"].append("Verifying the setup.")
+        self.tools.ensure_model_ready(model)
+        with self._jobs_lock:
+            job.update(progress=0.92, detail="Running a short first prompt")
+        first = self._do_first_prompt(job, model)
+        with self._jobs_lock:
+            job.update(progress=1.0, detail="Ready")
+        job["log"].append("Ready. The model answered on this laptop.")
+        return {"model": model, "pulled": pulled, **first}
 
     def job(self, job_id):
         with self._jobs_lock:
@@ -529,6 +630,12 @@ def make_handler(lab: Lab, token: str):
                 if name == "recommend":
                     _body_fields(b, {"goal"}, {"goal"})
                     return lab.recommend(b["goal"])
+                if name == "auto/plan":
+                    _body_fields(b, {"goal"})
+                    return lab.auto_plan(b.get("goal", "study"))
+                if name == "auto/start":
+                    _body_fields(b, {"confirm_code"}, {"confirm_code"})
+                    return lab.auto_start(b["confirm_code"])
                 if name == "plan":
                     _body_fields(b, {"model"}, {"model"})
                     return lab.plan(b["model"])
@@ -628,6 +735,7 @@ def main(argv=None):
         parser.exit(2, f"Lab could not start: {exc}\n")
     url = f"http://127.0.0.1:{server.server_address[1]}/#t={token}"
     print("Local AI Lab helper is running on this laptop only, in MANUAL installation mode.", flush=True)
+    print("Optional Auto setup can download one approved model via Ollama after you confirm it in the page.", flush=True)
     print("Keep this window open. Installation/downloads are performed by the learner.", flush=True)
     print("Windows has not yet been validated on a physical device.", flush=True)
     print(f"Open this private launch link (do not share its token):\n  {url}\n", flush=True)

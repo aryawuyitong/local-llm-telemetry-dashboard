@@ -83,7 +83,7 @@ class HelperServer(unittest.TestCase):
                 self.assertIn(request(self.port, path, self.token)[0], (400, 404))
 
     def test_install_and_download_are_not_background_actions(self):
-        for action in ("start_runtime", "pull_model", "run_shell"):
+        for action in ("start_runtime", "pull_model", "run_shell", "auto", "install_runtime"):
             body = {"action": action, "args": {"model": "qwen2.5:0.5b"}}
             self.assertEqual(request(self.port, "/api/jobs", self.token, body)[0], 400)
 

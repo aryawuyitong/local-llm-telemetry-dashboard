@@ -181,3 +181,11 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .chip:hover { border-color: var(--accent); }
 .a-form { display: flex; gap: 8px; padding: 10px 14px 14px; border-top: 1px solid var(--border); }
 .a-form textarea { resize: none; }
+
+/* optional Auto setup */
+.auto { margin-top: 18px; border-color: var(--accent); }
+.auto-head { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+.auto-head h2 { margin: 0; }
+.auto .confirm h3 { margin: 12px 0 8px; }
+.auto dl dd ol { margin: 4px 0 0; padding-left: 20px; }
+.check { display: flex; gap: 8px; align-items: center; margin: 12px 0 4px; font-weight: 600; }

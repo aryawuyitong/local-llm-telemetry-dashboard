@@ -43,7 +43,7 @@ class ChatClient:
         return self._request(self.base_url + path, payload)
 
     def _native_url(self, path: str) -> str:
-        if path not in ("/api/chat", "/api/tags", "/api/ps", "/api/version", "/api/show"):
+        if path not in ("/api/chat", "/api/tags", "/api/ps", "/api/version", "/api/show", "/api/pull"):
             raise ValueError("Unsupported native API path")
         return self.base_url[:-3] + path
 
@@ -202,6 +202,50 @@ class ChatClient:
                     if isinstance(context, int) and not isinstance(context, bool) and context > 0:
                         result["context_tokens"] = context
         return result
+
+    def pull(self, model: str, on_progress=None) -> None:
+        """Ask the local Ollama runtime to download one exact tag via /api/pull.
+
+        Used only by the confirmed Auto setup. The caller must already have checked
+        the tag against the allow-list. No shell command runs; Ollama fetches the
+        manifest from its registry and verifies each layer digest itself.
+        on_progress(status: str, completed: int | None, total: int | None).
+        """
+        if not isinstance(model, str) or not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,60}(?::[a-z0-9][a-z0-9._-]{0,40})?", model):
+            raise ValueError("Pull requires an exact catalog model name.")
+        finished = False
+        try:
+            # Long downloads: the timeout applies per socket read, not to the whole pull.
+            with self._request(self._native_url("/api/pull"), {"model": model, "stream": True}, timeout=120) as resp:
+                while True:
+                    raw = resp.readline(64 * 1024 + 1)
+                    if not raw:
+                        break
+                    if len(raw) > 64 * 1024:
+                        raise LLMError("Local runtime pull frame is too large.")
+                    if not raw.strip():
+                        continue
+                    chunk = json.loads(raw)
+                    if not isinstance(chunk, dict):
+                        raise ValueError("not an object")
+                    if chunk.get("error"):
+                        raise LLMError("The local runtime could not download this model. Check your network connection and free disk space.")
+                    status = chunk.get("status")
+                    status = status[:120] if isinstance(status, str) else ""
+                    total, done = chunk.get("total"), chunk.get("completed")
+                    total = total if type(total) is int and total > 0 else None
+                    done = done if type(done) is int and done >= 0 else None
+                    if on_progress:
+                        on_progress(status, done, total)
+                    if status == "success":
+                        finished = True
+                        break
+        except (ValueError, UnicodeError, TypeError) as e:
+            raise LLMError("The local runtime returned an invalid pull stream.") from e
+        except (OSError, TimeoutError, HTTPException) as e:
+            raise LLMError("The model download was interrupted or timed out. Run Auto again to resume.") from e
+        if not finished:
+            raise LLMError("The local runtime ended the download without reporting success.")
 
     def list_models(self) -> list[str]:
         try:

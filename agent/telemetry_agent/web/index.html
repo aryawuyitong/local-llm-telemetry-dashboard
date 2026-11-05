@@ -25,7 +25,7 @@
   <strong>Cannot reach this Lab Helper.</strong> If its terminal says <strong>Stopped.</strong>, start it again from the <code>agent/</code> folder and open the <strong>new private link</strong> printed in that terminal. An old helper tab cannot reconnect with its previous session token. Your downloaded models and saved benchmark results remain on this laptop.
 </div>
 
-<div class="banner">Manual installation mode. Windows awaits physical-device validation. Stop if a step needs admin access or an OS security bypass.</div>
+<div class="banner">Manual installation mode by default; optional Auto setup asks you to confirm first. Windows awaits physical-device validation. Stop if a step needs admin access or an OS security bypass.</div>
 <main class="layout">
   <section class="content">
 
@@ -46,11 +46,19 @@
         <dt>Tokens per second</dt><dd>Generated tokens divided by runtime-reported generation time. Tokens are text pieces whose size depends on language and tokenizer.</dd>
         <dt>First-text latency</dt><dd>The wait until the first nonempty response text. A stream chunk can contain several tokens, so this is a proxy for exact TTFT.</dd>
       </dl>
-      <button class="btn primary big" data-goto="deploy">Start: check my laptop</button>
+      <div class="actions"><button class="btn primary big" data-goto="deploy">Start: check my laptop</button>
+        <button class="btn big" data-auto>Auto setup (one click, asks to confirm)</button></div>
+      <div id="auto-card" class="card auto" hidden>
+        <header class="auto-head"><h2>Auto setup</h2><span class="badge ask">Less transparent than manual</span></header>
+        <p class="small muted">Auto picks the best approved model for this laptop, asks your local Ollama to download it, verifies it, and opens a chat. It never installs programs, runs shell commands, asks for admin rights or deletes files. Install and open Ollama yourself first.</p>
+        <label class="field"><span class="lbl">Goal</span><select id="auto-goal"></select></label>
+        <div id="auto-body"></div>
+      </div>
     </div>
 
     <div id="view-deploy" class="view" hidden>
       <h1>Deploy a model</h1>
+      <p class="note">Want it done for you? <button class="btn small" data-auto>Use Auto setup</button> It shows the plan and waits for your confirmation.</p>
       <ol class="stages">
         <li class="stage" id="stage-laptop"><h2><span class="n">1</span>Your laptop</h2><div id="laptop-body"></div></li>
         <li class="stage locked" id="stage-goal"><h2><span class="n">2</span>What do you want to use it for?</h2><div id="goals" class="goals"></div></li>

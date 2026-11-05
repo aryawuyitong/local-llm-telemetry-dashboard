@@ -384,6 +384,116 @@ function openCharts() {
   const timer = setTimeout(() => finish('The charts did not open in time. Use Download JSON instead.'), 15000);
 }
 
+
+// ------------------------------------------------------------------ optional Auto setup
+// The server issues a single-use confirmation code with each plan; the download
+// starts only when that code comes back from the Confirm button below.
+const auto = { plan: null, job: null, model: null };
+
+function openAuto() {
+  show('learn');
+  const card = $('#auto-card');
+  card.hidden = false;
+  const goals = state.status ? state.status.goals : {};
+  const sel = $('#auto-goal');
+  if (!sel.options.length) sel.innerHTML = Object.entries(goals).map(([k, g]) => `<option value="${esc(k)}" ${k === 'study' ? 'selected' : ''}>${esc(g.label)}</option>`).join('');
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  planAuto();
+}
+
+async function planAuto() {
+  if (auto.job && auto.job.status === 'running') return;
+  auto.plan = null;
+  $('#auto-body').innerHTML = `<p class="muted">Checking Ollama, reading this laptop and choosing a model…</p>`;
+  try {
+    const p = await api('auto/plan', { goal: $('#auto-goal').value || 'study' });
+    auto.plan = p;
+    renderAutoPlan();
+  } catch (e) { $('#auto-body').innerHTML = errorHtml(e.message); }
+}
+
+function renderAutoPlan() {
+  const p = auto.plan;
+  if (p.stop) {
+    $('#auto-body').innerHTML = `<p class="note warn">${esc(p.stop)}</p>
+      <div class="actions">${p.link ? `<a class="btn primary" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">Official Ollama download page</a>` : ''}
+      <button class="btn" data-auto-replan>Check again</button><button class="btn" data-goto="deploy">Do it manually</button></div>`;
+    return;
+  }
+  const m = p.model;
+  $('#auto-body').innerHTML = `<div class="confirm">
+      <h3>Confirm: ${esc(m.name)}</h3>
+      <div class="facts">
+        ${fact('Model', m.name, `${m.params_billion}B parameters`)}
+        ${fact('Download', p.already_installed ? 'Already on this laptop' : `≈ ${p.download_gib_estimate} GiB`, `${p.free_disk_gib} GiB free disk`)}
+        ${fact('Memory', `${m.needs_free_ram_gb} GiB needed`, `${p.available_ram_gib} GiB free now`)}
+      </div>
+      <p>${esc(p.goal_why || '')}</p>
+      <dl><dt>Auto will</dt><dd><ol>${p.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></dd>
+        <dt>Source</dt><dd>${esc(p.source)}</dd><dt>License</dt><dd>${esc(p.license_note)}</dd></dl>
+      <p class="note warn small">${esc(p.security_note)}</p>
+      <label class="check"><input type="checkbox" id="auto-ack"> I reviewed this plan and want Auto to carry it out.</label>
+      <div class="actions"><button class="btn primary" data-auto-confirm disabled>Confirm &amp; ${p.already_installed ? 'set up' : 'download'}</button>
+        <button class="btn" data-auto-cancel>Cancel</button><button class="btn" data-goto="deploy">Do it manually instead</button></div>
+      <p class="small muted">This confirmation expires in ${Math.round(p.expires_in_s / 60)} minutes and works once.</p></div>`;
+}
+
+async function confirmAuto() {
+  const p = auto.plan;
+  if (!p || !p.confirm_code || !$('#auto-ack').checked) return;
+  auto.plan = null; // the code is single use
+  auto.model = p.model.name;
+  try {
+    auto.job = await api('auto/start', { confirm_code: p.confirm_code });
+    renderAutoJob();
+    while (auto.job.status === 'running') {
+      await sleep(800);
+      auto.job = await api('jobs/' + auto.job.id);
+      renderAutoJob();
+    }
+    await refreshStatus();
+    renderAutoJob();
+  } catch (e) { $('#auto-body').innerHTML = errorHtml(e.message) + `<div class="actions"><button class="btn" data-auto-replan>Start over</button></div>`; }
+}
+
+function renderAutoJob() {
+  const j = auto.job;
+  if (j.status === 'running') {
+    $('#auto-body').innerHTML = `<h3>Setting up ${esc(auto.model)}…</h3>
+      <div class="progress ${j.progress == null ? 'indeterminate' : ''}"><span style="width:${j.progress == null ? 30 : Math.round(j.progress * 100)}%"></span></div>
+      <div class="small muted">${esc(j.detail || 'Starting')}${j.progress != null ? ` · ${Math.round(j.progress * 100)}%` : ''}</div>
+      <pre class="log">${esc(j.log.join('\n'))}</pre>
+      <p class="small muted">Keep this tab and the helper terminal open. If it stops, press Auto again; Ollama resumes partial downloads.</p>`;
+    return;
+  }
+  if (j.status !== 'done') {
+    $('#auto-body').innerHTML = errorHtml(j.error || 'Auto setup stopped.', j.diagnosis)
+      + `<pre class="log">${esc(j.log.join('\n'))}</pre><div class="actions"><button class="btn" data-auto-replan>Try again</button><button class="btn" data-goto="deploy">Continue manually</button></div>`;
+    return;
+  }
+  const r = j.result;
+  state.model = r.model;
+  if ($('#auto-try-input')) return;
+  $('#auto-body').innerHTML = `<p class="note ok"><strong>${esc(r.model)} is ready.</strong> ${r.pulled ? 'Downloaded, verified' : 'Verified'} and answered in ${esc(r.seconds)} s: "${esc(r.reply)}"</p>
+    <h3>Chat with ${esc(r.model)}</h3><p class="small muted">Runs on this laptop; nothing leaves your computer.</p>
+    <div class="row"><textarea id="auto-try-input" rows="2" placeholder="Explain what RAM is in two sentences."></textarea>
+      <button class="btn primary" data-auto-try>Send</button></div>
+    <div id="auto-try-out"></div>
+    <div class="actions"><button class="btn" data-goto="predict">Next: predict and measure its speed</button></div>`;
+  $('#auto-try-input').focus();
+}
+
+async function autoTry() {
+  const input = $('#auto-try-input');
+  const text = input.value.trim() || input.placeholder;
+  $('#auto-try-out').innerHTML = `<p class="muted answer">Thinking…</p>`;
+  try {
+    const r = await api('try', { model: auto.job.result.model, message: text });
+    $('#auto-try-out').innerHTML = `<div class="card answer">${md(r.text)}</div>
+      <div class="stats"><span>First response text after <b>${r.ttft_s ?? '?'} s</b></span><span><b>${r.tps ?? '?'}</b> tokens per second</span><span>${r.tokens ?? '?'} tokens</span></div>`;
+  } catch (e) { $('#auto-try-out').innerHTML = errorHtml(e.message); }
+}
+
 // ------------------------------------------------------------------ assistant
 function md(src) {
   const parts = String(src || '').split(/```[\w-]*\n?([\s\S]*?)```/g);
@@ -473,6 +583,11 @@ document.addEventListener('click', async e => {
     catch (_) { t.textContent = 'Select the command above to copy'; }
     return;
   }
+  if ('auto' in d) { openAuto(); return; }
+  if ('autoReplan' in d) { planAuto(); return; }
+  if ('autoConfirm' in d) { confirmAuto(); return; }
+  if ('autoCancel' in d) { auto.plan = null; $('#auto-card').hidden = true; return; }
+  if ('autoTry' in d) { autoTry(); return; }
   if ('useModel' in d) { loadPlan(); return; }
   if ('recheck' in d) { await refreshStatus(); loadPlan(); return; }
   if ('try' in d) { tryModel(); return; }
@@ -492,6 +607,8 @@ document.addEventListener('click', async e => {
 
 document.addEventListener('change', e => {
   if (e.target.name === 'model') { state.model = e.target.value; renderModel(); }
+  if (e.target.id === 'auto-ack') { const b = document.querySelector('[data-auto-confirm]'); if (b) b.disabled = !e.target.checked; }
+  if (e.target.id === 'auto-goal') planAuto();
   if (e.target.id === 'pr-model') { state.predict.model = e.target.value; state.predict.result = null; renderPredict(); }
   if (e.target.id === 'safety') {
     state.safety = e.target.checked;
