@@ -788,7 +788,7 @@ class Lab:
             if rt["lab_models"]:
                 add("models", "Models", "ok", f"On this laptop, with their files: {', '.join(rt['lab_models'])}.")
             else:
-                add("models", "Models", "warn", "No model has its file on this laptop.", goto="models")
+                add("models", "Models", "warn", "No model has its file on this laptop.", goto="catalog")
             broken = rt.get("broken_models") or []
             add("model_files", "Model files", "warn" if broken else "ok",
                 f"Ollama lists these, but their files are gone, so they can't run: {', '.join(broken)}." if broken else "Every model Ollama lists has its file.",
@@ -809,7 +809,7 @@ class Lab:
         lost = [APPS[a]["name"] for a in dict.fromkeys(owed_apps) if not app_path(APPS[a])]
         add("lab_apps_present", "Apps the lab installed", "warn" if lost else "ok",
             f"The lab installed these, and they've since gone: {', '.join(lost)}. You may have removed them yourself." if lost else ("Every app the lab installed is still here." if owed_apps else "The lab hasn't installed any apps."),
-            goto="apps" if lost else None)
+            goto="catalog" if lost else None)
         with self._jobs_lock:
             failed = [j for j in self.jobs.values() if j["status"] == "failed"]
         if failed:

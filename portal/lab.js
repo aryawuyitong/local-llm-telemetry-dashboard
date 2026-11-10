@@ -14,6 +14,17 @@ const TOKEN = (() => {
   }
   try { return sessionStorage.getItem('labToken'); } catch (e) { return null; }
 })();
+// A newly launched helper may reuse the same port. Pasting its new launch link
+// into an open tab is a hash-only navigation, so reload with the new token. This runs in the website
+// version too, so a tab showing the website switches to the lab instead of staying as it was.
+window.addEventListener('hashchange', () => {
+  const match = location.hash.match(/^#t=([\w-]+)$/);
+  if (!match || !onLaptop) return;
+  try { sessionStorage.setItem('labToken', match[1]); } catch (_) { /* private mode */ }
+  history.replaceState(null, '', location.pathname + '#deploy');
+  location.reload();
+});
+
 if (!onLaptop || !TOKEN) return;
 document.documentElement.dataset.mode = 'lab';
 
@@ -21,16 +32,6 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const isMac = /Mac/.test(navigator.platform || navigator.userAgent);
-
-// A newly launched helper may reuse the same port. Pasting its new launch link
-// into an old tab is a hash-only navigation, so explicitly reload with the new token.
-window.addEventListener('hashchange', () => {
-  const match = location.hash.match(/^#t=([\w-]+)$/);
-  if (!match) return;
-  try { sessionStorage.setItem('labToken', match[1]); } catch (_) { /* private mode */ }
-  history.replaceState(null, '', location.pathname + '#deploy');
-  location.reload();
-});
 
 async function api(path, body) {
   const opts = { method: body === undefined ? 'GET' : 'POST', headers: { 'X-Lab-Token': TOKEN || '' } };
@@ -280,15 +281,6 @@ function renderAppSteps() {
 }
 
 // ------------------------------------------------------------------ recipes: a reviewed list of the same cards
-async function renderRecipes() {
-  try { state.recipes = (await api('recipes')).recipes; } catch (e) { $('#recipes-body').innerHTML = errorHtml(e.message); return; }
-  $('#recipes-body').innerHTML = `<div class="cards">${state.recipes.map(r => `<div class="card"><h3>${esc(r.title)}</h3>
-      <p class="small">${esc(r.why)}</p><p class="small muted">For: ${esc(r.for)}.</p>
-      <ol class="small recipe-steps">${r.step_titles.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-      ${reviewHtml(r.review)}
-      <div class="row-actions"><button class="btn small" data-setup-recipe="${esc(r.id)}">See the steps</button></div></div>`).join('')}</div>`;
-}
-
 const reviewHtml = review => (review.by ? `<p class="small muted">Reviewed by ${esc(review.by)} on ${esc(review.on)}.</p>` : '');
 
 async function loadRecipePlan(recipe, scroll = true) {
@@ -329,7 +321,7 @@ async function undoApp(button, app) {
   } catch (e) { (button.closest('.change') || $('#changes-body')).insertAdjacentHTML('beforeend', errorHtml(e.message)); return; }
   if (state.appPlan && state.appPlan.app.id === app) state.appPlan = null, $('#app-plan').innerHTML = '';
   await renderChanges();
-  if (!$('#view-apps').hidden) renderApps();
+  if (!$('#view-catalog').hidden) renderApps();
   if (!$('#view-mylab').hidden) renderMyLab();
 }
 
@@ -470,7 +462,7 @@ async function renderMyLab() {
     $('#mylab-apps').innerHTML = byLab.length ? `<div class="card">${byLab.map(a => `<div class="change wrap"><div><strong>${esc(a.name)}</strong>
         <div class="small muted">About ${a.size_gb} GB · <code class="cmd">${esc(a.path)}</code></div></div>
         <div class="row-actions"><button class="btn small" data-undo-app="${esc(a.id)}">Undo install</button></div></div>`).join('')}</div>`
-      : `<div class="card"><p class="muted">None yet. ${apps.apps.filter(a => a.installed).length ? 'Apps that were already here are not listed, because the lab didn\'t add them.' : ''}</p><button class="btn" data-goto="apps">See the apps</button></div>`;
+      : `<div class="card"><p class="muted">None yet. ${apps.apps.filter(a => a.installed).length ? 'Apps that were already here are not listed, because the lab didn\'t add them.' : ''}</p><button class="btn" data-goto="catalog">See the apps</button></div>`;
     $('#mylab-receipt').innerHTML = receiptCard();
     $('#mylab-help').innerHTML = helpCard();
     const items = log.changes.slice().reverse();
@@ -489,8 +481,8 @@ async function renderMyLab() {
         <tbody>${results.models.slice(0, 8).map(m => `<tr><td>${esc(m.model)}<div class="small muted">${esc(when(m.last_run))}</div></td><td class="num">${m.median_tps != null ? Math.round(m.median_tps) : '–'}</td>
           <td class="num">${m.median_ttft_ms != null ? Math.round(m.median_ttft_ms) + ' ms' : '–'}</td><td class="num">${m.peak_ram_mb != null ? (m.peak_ram_mb / 1024).toFixed(1) + ' GiB' : '–'}</td><td class="num">${m.valid_runs}/${m.runs}</td></tr>`).join('')}</tbody></table></div>
         <p class="small muted mt">Tokens/s: how fast the reply appears (tokens are pieces of words). First text: the wait before the first word. Peak memory: the most memory the model used.</p>
-        <div class="actions"><button class="btn" data-goto="results">See the charts</button></div>`
-      : `<div class="card"><p>No measurements yet.</p><button class="btn" data-goto="predict">Measure a model</button></div>`;
+        <div class="actions"><button class="btn" data-goto="measure">See the charts</button></div>`
+      : `<div class="card"><p>No measurements yet.</p><button class="btn" data-goto="measure">Measure a model</button></div>`;
     $('#mylab-activity').innerHTML = items.length ? `<div class="card">${items.slice(0, 60).map(c => `<div class="change ${c.undone ? 'undone' : ''}"><div><div>${esc(c.what)}</div>
         <div class="small muted">${esc(c.when)} · ${esc(ACTIVITY_LABEL[c.kind || 'change'] || '')}${c.undone ? ' · undone' : ''}</div></div></div>`).join('')}</div>`
       : '<div class="card"><p class="muted">Nothing yet. Steps you run and tools the assistant uses appear here.</p></div>';
@@ -554,7 +546,7 @@ function renderModel() {
       <div><div><strong>${esc(o.name)}</strong>${o.name === r.pick.name ? '<span class="tag">Suggested</span>' : ''}${have.has(o.name) ? '<span class="tag ok">Already downloaded</span>' : ''}</div>
         <div class="small muted">${o.params_billion} billion learned numbers · about ${o.download_file_size_gb} GB to download · needs about ${o.needs_free_ram_gb} GB of free memory</div></div></label>`).join('');
   $('#model-body').innerHTML = `<p>${esc(r.goal_why)}</p>
-    ${installed.length ? `<div class="note">You already have <strong>${installed.map(esc).join(', ')}</strong>. <button class="btn small" data-goto="predict">Measure one of these</button></div>` : ''}
+    ${installed.length ? `<div class="note">You already have <strong>${installed.map(esc).join(', ')}</strong>. <button class="btn small" data-goto="measure">Measure one of these</button></div>` : ''}
     <div class="options">${opts}</div>
     ${r.before_you_run ? `<p class="note warn">${esc(r.before_you_run)}</p>` : ''}
     <details><summary>How we worked this out</summary>
@@ -588,7 +580,7 @@ function summarize(s) {
   const r = s.result;
   s.summary = s.action === 'first_prompt' ? `Replied in ${r.seconds} s: "${r.reply}"`
     : s.action === 'start_runtime' ? 'Ollama is running on this laptop, at port 11434.'
-    : s.action === 'benchmark' ? `Measured ${r.median_tps} tokens/s, peak memory ${r.peak_ram_mb != null ? (r.peak_ram_mb / 1024).toFixed(1) + ' GiB' : '?'}. See Predict & Run and Results.`
+    : s.action === 'benchmark' ? `Measured ${r.median_tps} tokens/s, peak memory ${r.peak_ram_mb != null ? (r.peak_ram_mb / 1024).toFixed(1) + ' GiB' : '?'}. See the Measure page.`
     : s.action === 'pull_model' ? 'Downloaded. It appears under What changed on your laptop, with Undo.'
     : s.action === 'remove_model' ? 'Removed from this laptop.'
     : s.action === 'install_app' ? (r.already ? `Already installed at ${r.path}.` : `Installed in ${r.seconds} s at ${r.path}. It appears in My lab, with Undo.`)
@@ -633,7 +625,7 @@ function renderPlanEditor(steps, first) {
       <label class="field"><span class="lbl">Model</span><select id="plan-model">${models.map(m => `<option value="${esc(m.name)}" ${m.name === state.model ? 'selected' : ''} ${m.verdict === 'no' ? 'disabled' : ''}>${esc(m.name)} · ${m.quant} · ${m.size_gb} GB · ${verdictOf(m)}</option>`).join('')}</select></label>
       <label class="field"><span class="lbl">Context size (Try it)</span><select id="plan-context">${[2048, 4096, 8192].map(c => `<option ${c === state.context ? 'selected' : ''}>${c}</option>`).join('')}</select></label>
     </div>
-    <p class="small muted">Predict &amp; Run keeps fixed settings, so results stay comparable.</p>
+    <p class="small muted">Measure keeps fixed settings, so results stay comparable.</p>
     ${steps.map((s, i) => `<div class="plan-row"><span class="badge ${s.done ? 'ok' : s.running ? 'run' : s.error ? 'bad' : i === first ? 'ask' : ''}">${s.done ? 'Done' : s.running ? 'Running' : s.error ? 'Failed' : 'To do'}</span>
       <div class="plan-main"><strong>${esc(s.title)}</strong> <span class="small muted">${esc(s.brief || '')}</span>
         ${s.command ? `<div><code class="cmd">${esc(s.command)}</code> <button class="btn small" data-copy-command="${esc(s.command)}">Copy command</button></div>` : ''}
@@ -666,7 +658,7 @@ function renderTry() {
     <div class="row"><textarea id="try-input" rows="2" placeholder="Explain what RAM is in two sentences."></textarea>
       <button class="btn primary" data-try>Send</button></div>
     <div id="try-out"></div>
-    <div class="actions"><button class="btn primary" data-goto="use">Keep talking: open Use it</button><button class="btn" data-goto="predict">Predict its speed</button></div>`;
+    <div class="actions"><button class="btn primary" data-goto="use">Keep talking: open Use it</button><button class="btn" data-goto="measure">Measure its speed</button></div>`;
 }
 
 async function tryModel() {
@@ -754,8 +746,8 @@ function renderPrediction(r) {
     <div class="kpis">${fact('Wait for the first word', r.median_ttft_ms == null ? 'Unavailable' : `${r.median_ttft_ms} ms`, 'the middle of the runs')}${fact('Warm-up reply', r.warmup_round_trip_s == null ? 'Unavailable' : `${r.warmup_round_trip_s} s`)}
       ${fact('CPU', r.median_cpu_percent == null ? 'Unavailable' : `${r.median_cpu_percent}%`, 'how busy the processor was; the graphics chip is not counted')}${fact('Peak memory', r.peak_ram_mb == null ? 'Unavailable' : `${Math.round(r.peak_ram_mb)} MiB`)}</div>
     ${r.note ? `<p class="small muted mt">${esc(r.note)}</p>` : ''}
-    ${toolChip('run_benchmark', 'saved for the Results tab')}
-    <div class="actions"><button class="btn" data-ask="${esc(q)}">Ask the assistant why</button><button class="btn" data-goto="results">See all results</button></div></div>`;
+    ${toolChip('run_benchmark', 'saved, and charted below')}
+    <div class="actions"><button class="btn" data-ask="${esc(q)}">Ask the assistant why</button><button class="btn" data-goto="measure">See all results</button></div></div>`;
 }
 
 // ------------------------------------------------------------------ results
@@ -763,11 +755,12 @@ async function loadResults() {
   try {
     const r = await fetch('/api/results.json', { headers: { 'X-Lab-Token': TOKEN || '' } });
     if (!r.ok) {
-      $('#results-body').innerHTML = `<div class="card lab-note"><div class="lab-figure lab-state-figure" data-figure="plot" data-label="An empty bar chart"></div><p>No measurements yet.</p><button class="btn primary" data-goto="predict">Measure a model</button></div>`;
+      $('#results-body').innerHTML = `<div class="card lab-note"><div class="lab-figure lab-state-figure" data-figure="plot" data-label="An empty bar chart"></div><p>No measurements yet.</p><button class="btn primary" data-goto="measure">Measure a model</button></div>`;
       return;
     }
     window.LocalLabPortal.showSession(await r.text());
     $('#results-body').innerHTML = `<div class="card lab-note"><p>Your latest measurement from this laptop is in the charts below. It stays on your laptop.</p>
+      <p class="small muted">Want to help other students see what a laptop like yours can do? Download the file and send it to the team. It has no name, account or folder path in it, and the lab never sends it for you.</p>
       <div class="actions"><button class="btn" data-download>Download JSON</button><button class="btn" data-goto="mylab">See all measurements</button></div></div>`;
   } catch (e) { $('#results-body').innerHTML = errorHtml(e.message); }
 }
@@ -968,7 +961,7 @@ function compareBody() {
   const u = state.use, c = u.compare, models = u.info.models;
   if (models.length < 2) {
     return `<p>This needs two models on your laptop, and you have ${models.length === 1 ? 'one' : 'none'}. Download a second model, ideally a different size, then come back.</p>
-      <button class="btn" data-goto="models">See the models</button>`;
+      <button class="btn" data-goto="catalog">See the models</button>`;
   }
   const select = (id, value) => `<select id="${id}" ${c.running ? 'disabled' : ''}>${models.map(m => `<option ${m.name === value ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select>`;
   return `<div class="plan-options"><label class="field"><span class="lbl">Model A</span>${select('cmp-a', c.a)}</label><label class="field"><span class="lbl">Model B</span>${select('cmp-b', c.b)}</label></div>
@@ -1077,17 +1070,16 @@ async function renderUse() {
 
 // ------------------------------------------------------------------ navigation + events
 function onView() {
-  const view = location.hash.slice(1);
-  if (view === 'predict') refreshStatus().then(renderPredict);
-  if (view === 'results') loadResults();
+  const asked = location.hash.slice(1);
+  const view = { models: 'catalog', apps: 'catalog', predict: 'measure', results: 'measure' }[asked] || asked;
+  if (view === 'measure') { refreshStatus().then(renderPredict); loadResults(); }
   if (view === 'mylab') refreshStatus().then(renderMyLab);
-  if (view === 'apps') refreshStatus().then(() => { renderApps(); renderRecipes(); });
+  if (view === 'catalog') { refreshStatus().then(renderApps); showModelFit(); }
   if (view === 'use') refreshStatus().then(renderUse);
-  if (view === 'models') showModelFit();
   if (view === 'deploy' || !view) renderChanges();
 }
 
-// The Models page shows real verdicts for this laptop instead of asking for its memory.
+// The Catalog's model cards show real verdicts for this laptop instead of asking for its memory.
 async function showModelFit() {
   await loadCompat();
   const results = await api('results').catch(() => ({ models: [] }));
@@ -1105,7 +1097,7 @@ function modelChosenElsewhere(model, where) {
 }
 
 async function setUpModel(model) {
-  modelChosenElsewhere(model, 'on the Models page');
+  modelChosenElsewhere(model, 'in the Catalog');
   resetTry();
   location.hash = 'deploy';
   await loadPlan();
@@ -1186,7 +1178,7 @@ document.addEventListener('click', async e => {
     const s = findStep(d.approve);
     if (!s) return;
     const ok = await runStep(s, () => redraw(s));
-    if (ok) { await refreshStatus(); renderChanges(); if (state.proposals[s.id]) { await loadCompat(); renderLaptop(); if (state.plan) loadPlan(); } if (inRecipePlan(s) && s.action !== 'check_recipe') { await loadRecipePlan(state.recipePlan.recipe.id, false); renderApps(); return; } if (inAppPlan(s) || ['install_app', 'remove_app'].includes(s.action)) { if (!$('#view-apps').hidden) renderApps(); } }
+    if (ok) { await refreshStatus(); renderChanges(); if (state.proposals[s.id]) { await loadCompat(); renderLaptop(); if (state.plan) loadPlan(); } if (inRecipePlan(s) && s.action !== 'check_recipe') { await loadRecipePlan(state.recipePlan.recipe.id, false); renderApps(); return; } if (inAppPlan(s) || ['install_app', 'remove_app'].includes(s.action)) { if (!$('#view-catalog').hidden) renderApps(); } }
     redraw(s);
   }
 });

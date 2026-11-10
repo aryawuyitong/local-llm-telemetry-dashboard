@@ -36,6 +36,10 @@ This version combines three things: Yitong's Oct 31 `main`, the live website, an
 
 **Use it** is a real conversation with any model on the laptop, and **Compare** puts two side by side. **Every card states its time, space, internet, password, money and undo**, and a card without all six can't be built. **Recipes** are reviewed lists of registered steps. **The health check** only reads and offers repair cards, and **the help report** is one page a student reads before choosing to share it.
 
+**The public Demo page** lets a visitor click through the lab with nothing installed. Its cards come from the registry and its replies were recorded from real runs on one Mac, wrong answers included.
+
+**The site was restructured on Nov 10.** Each version has its own short menu and a strip that says which version it is. Models and Apps became one **Catalog** shared by both versions, the lab's measuring pages became one **Measure** page, and the public Results page shows what real laptops measured. The tables above use the earlier page names.
+
 `portal/lab-data.js` is generated from `agent/skill` by `scripts/sync_portal_data.py`, because GitHub Pages only publishes `portal/`. `scripts/check_project.py` fails if it goes out of date.
 
 **The Download button points at the ZIP of `main`**, the same branch GitHub Pages publishes, so it works once this is merged. Change `DOWNLOAD_URL` in `portal/guide.js` when there's a release.

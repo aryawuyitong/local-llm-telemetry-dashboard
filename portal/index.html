@@ -17,7 +17,13 @@
   <script src="data.js" defer></script>
   <script src="app.js" defer></script>
   <script src="lab-data.js" defer></script>
+  <script src="measured-data.js" defer></script>
   <script src="guide.js" defer></script>
+  <script src="catalog-data.js" defer></script>
+  <script src="catalog.js" defer></script>
+  <script src="preview-data.js" defer></script>
+  <script src="preview.js" defer></script>
+  <script src="learn.js" defer></script>
   <script src="motion.js" defer></script>
   <script src="figures.js" type="module"></script>
 </head>
@@ -26,19 +32,21 @@
   <header class="site-header">
     <a class="brand" href="#deploy" aria-label="Local AI Lab home"><span class="brand-mark" aria-hidden="true">L<span>↗</span></span><span>LOCAL AI <b>LAB</b><small>AN EXPERIMENT IN UNDERSTANDING</small></span></a>
     <nav class="main-nav" aria-label="Lab sections">
-      <a href="#deploy" data-view="deploy" aria-current="page"><span class="public-only">Start</span><span class="lab-only">Set up</span></a>
-      <a href="#models" data-view="models">Models</a>
+      <a href="#deploy" data-view="deploy" aria-current="page"><span class="public-only">Home</span><span class="lab-only">Set up</span></a>
+      <a href="#preview" data-view="preview" class="public-only">Demo</a>
+      <a href="#catalog" data-view="catalog">Catalog</a>
       <a href="#use" data-view="use" class="lab-only">Use it</a>
-      <a href="#learn" data-view="learn">Learn</a>
-      <a href="#predict" data-view="predict">Predict &amp; Run</a>
-      <a href="#results" data-view="results">Results</a>
-      <a href="#apps" data-view="apps" class="lab-only">Apps</a>
+      <a href="#measure" data-view="measure" class="lab-only">Measure</a>
       <a href="#mylab" data-view="mylab" class="lab-only">My lab</a>
+      <a href="#learn" data-view="learn">Learn</a>
+      <a href="#results" data-view="results" class="public-only">Results</a>
     </nav>
     <span id="pill" class="lab-status lab-only">Connecting…</span>
     <span class="local-pill public-only"><i aria-hidden="true"></i> Local-first by design</span>
   <div id="prog" aria-hidden="true"></div></header>
   <div id="glow" aria-hidden="true"></div>
+  <p class="mode-strip public-only"><strong>Website version.</strong> Nothing here can touch your laptop. To run a model for real, <a href="#deploy">get the lab</a>.</p>
+  <p class="mode-strip in-lab lab-only"><strong>Lab version, running on this laptop.</strong> You see every step first, and each one waits for your approval.</p>
 
   <main id="main" tabindex="-1">
     <div id="connection-lost" class="notice lab-only" hidden role="alert"><strong>Cannot reach the Lab Helper.</strong> If its window says <strong>Stopped.</strong>, double-click <strong>Start Lab Helper</strong> again; it opens a new private link. Your downloaded models and saved results are still on this laptop.</div>
@@ -68,31 +76,26 @@
           </div>
           <div class="lab-answer" id="answer" aria-live="polite"><p class="lab-ghost">Pick one to see<br>what you can run.</p></div>
         </div>
+        <p class="lab-start"><a class="button secondary" href="#preview">Try the one-minute demo first <span aria-hidden="true">→</span></a></p>
         <p class="lab-start">Already downloaded it? Double-click <b>Start Lab Helper</b> in its <b>agent</b> folder.</p>
       </div>
 
-      <div class="lab-how" id="how"><div class="lab-pin" id="pin"><div class="lab-sticky">
-        <div class="lab-how-head"><p class="lab-label lab-accent">What happens</p><h2>Six steps. <em>You approve each one.</em></h2></div>
-        <div class="lab-track-wrap"><ol class="lab-track" id="track">
-          <li><div class="lab-card-top"><b>1</b><div class="lab-figure" data-figure="loupe" data-label="A magnifying glass on a sheet"></div></div><h3>Check your laptop</h3><p>Reads your system, memory and disk.</p><small>Changes nothing</small></li>
-          <li><div class="lab-card-top"><b>2</b><div class="lab-figure" data-figure="plug" data-label="A plug rising toward a wall socket"></div></div><h3>Install Ollama</h3><p>The engine that runs models. You run its official installer.</p><small>Adds one app</small></li>
-          <li><div class="lab-card-top"><b>3</b><div class="lab-figure" data-figure="router" data-label="A small router with its antennas up"></div></div><h3>Start Ollama</h3><p>A small server that only listens on your laptop.</p><small>Quit it any time</small></li>
-          <li><div class="lab-card-top"><b>4</b><div class="lab-figure" data-figure="drawer" data-label="A cabinet with a drawer sliding out"></div></div><h3>Download a model</h3><p>The AI itself: a file of learned numbers.</p><small id="step-size">About 1 GB · one-click undo</small></li>
-          <li><div class="lab-card-top"><b>5</b><div class="lab-figure" data-figure="terminal" data-label="A terminal window with rows of text"></div></div><h3>Say hello</h3><p>A real answer proves every step worked.</p><small>Nothing leaves your laptop</small></li>
-          <li><div class="lab-card-top"><b>6</b><div class="lab-figure" data-figure="terrain" data-label="Pillars rising like a bar chart"></div></div><h3>Guess, then measure</h3><p>Predict its speed and memory, then see the real numbers.</p><small>Saved on your laptop</small></li>
-        </ol></div>
-        <p class="lab-how-note">After you download it, unzip the folder, open <b>agent</b>, and double-click <b>Start Lab Helper</b>. It checks for Python first; if your laptop has none, it asks before putting a private copy in the lab folder. This same website then opens from your laptop, with these steps working. New to this? Each step explains itself. Done this before? Switch to <b>Experienced</b> and run them together. Once it's running, you can talk to your model, compare two models side by side, and see exactly what changed on your laptop.</p>
-      </div></div></div>
 
-      <div class="lab-stuck" id="stuck">
-        <div><div class="lab-figure lab-stuck-figure" data-figure="query" data-label="A question mark"></div><p class="lab-label lab-accent">Stuck?</p><h2>Paste your <em>error.</em></h2><p class="lab-lede">Checked in your browser. Nothing is sent anywhere.</p></div>
-        <form id="err-form"><textarea id="err" rows="3" aria-label="Error text" placeholder="zsh: command not found: ollama"></textarea><button class="button primary" type="submit">Check it</button><div id="err-out" aria-live="polite"></div></form>
-      </div>
+      <div class="lab-next"><h2>After you download it</h2>
+        <ol><li>Unzip the folder, open <b>agent</b>, and double-click <b>Start Lab Helper</b>. It checks for Python first. If your laptop has none, it asks before adding a private copy to the lab folder.</li>
+          <li>This same website opens from your laptop, as the <b>lab version</b>, with a Set up page that walks you through Ollama and your first model.</li>
+          <li>Read each step's card, then approve it or type it yourself. After that you can talk to your model, compare two, and see what changed.</li></ol></div>
 
       <div class="lab-trust">
         <div><div class="lab-figure lab-trust-figure" data-figure="drawer" data-label="A cabinet of drawers"></div><h3>It adds</h3><p>The lab folder, the model you choose, and Ollama, which you install yourself.</p></div>
         <div><div class="lab-figure lab-trust-figure" data-figure="padlock" data-label="A padlock"></div><h3>It never</h3><p>Needs your password, sends your questions anywhere, or turns off security.</p></div>
         <div><div class="lab-figure lab-trust-figure" data-figure="plug" data-label="A plug and its socket"></div><h3>To remove it</h3><p>Click Undo for the model, delete the folder, and remove Ollama like any other app.</p></div>
+      </div>
+
+      <h2 class="lab-help-title" id="help">Help</h2>
+      <div class="lab-stuck" id="stuck">
+        <div><div class="lab-figure lab-stuck-figure" data-figure="query" data-label="A question mark"></div><p class="lab-label lab-accent">Stuck?</p><h2>Paste your <em>error.</em></h2><p class="lab-lede">Checked in your browser. Nothing is sent anywhere.</p></div>
+        <form id="err-form"><textarea id="err" rows="3" aria-label="Error text" placeholder="zsh: command not found: ollama"></textarea><button class="button primary" type="submit">Check it</button><div id="err-out" aria-live="polite"></div></form>
       </div>
 
       <div class="lab-more">
@@ -111,18 +114,38 @@
       </div>
     </section>
 
-    <section id="view-models" class="view" hidden aria-labelledby="models-title">
-      <div class="page-intro"><p class="eyebrow">MODELS</p><h1 id="models-title">Which model <em>fits?</em></h1><p>Every model the lab allows, and what each one needs.<span class="public-only"> Pick your memory to see what fits.</span></p></div>
-      <p class="lab-only lab-note">Checked against this laptop right now. Choose one to see each step before anything downloads.</p>
+    <section id="view-preview" class="view public-only" hidden aria-labelledby="preview-title">
+      <div class="lab-app"><div class="page-intro"><p class="eyebrow">DEMO</p><h1 id="preview-title">Try the lab, <em>without installing it.</em></h1><p>Click through what the real lab does on a laptop: approve each step, talk to a model, compare two, and see what changed.</p></div>
+        <p class="note warn demo-flag"><strong>This is a demo.</strong> Nothing here touches your laptop, and nothing is installed. Every reply and number is real, though. <span id="preview-source"></span></p>
+        <div id="preview-body"></div></div>
+    </section>
+
+
+    <section id="view-catalog" class="view" hidden aria-labelledby="catalog-title">
+      <div class="lab-app catalog"><div class="page-intro"><p class="eyebrow">CATALOG</p><h1 id="catalog-title">Everything the lab <em>can set up.</em></h1><p>Read every step, its exact command, what it costs and how to undo it, before you decide to trust it.</p></div>
+        <div class="cat-os" role="group" aria-label="Show commands for"><span class="small muted">Show commands for</span><button class="btn small" data-cat-os="mac">Mac</button><button class="btn small" data-cat-os="windows">Windows</button></div>
+        <h2>Ready-made setups</h2><p>Each one is a short list of the lab's usual steps, ending in one check that everything is really in place. Read your course's own setup page first, because these don't replace it.</p>
+        <div id="catalog-recipes"></div>
+        <div id="recipe-plan"></div>
+        <h2>Models</h2><p><span class="public-only">Every model the lab allows, and what each one needs. Pick your laptop's memory to see what fits.</span><span class="lab-only">Checked against this laptop right now. Choose one to see each step before anything downloads.</span></p>
+      </div>
       <div class="lab-pills lab-models-pills public-only" role="group" aria-label="Laptop memory"><button data-mem="4">4 GB</button><button data-mem="8">8 GB</button><button data-mem="16">16 GB</button><button data-mem="24">24 GB</button><button data-mem="32">32 GB+</button></div>
       <div class="lab-model-grid" id="model-grid"></div>
       <p class="fine-print">Sizes and memory are planning estimates, and descriptions are our notes rather than independent ratings. Only numbers marked as measured come from real runs.</p>
+      <div class="lab-app catalog">
+        <h2>Apps</h2><p>The same cards and the same rules as a model. Nothing here needs your password.</p>
+        <div id="catalog-apps" class="public-only"></div>
+        <div id="apps-body" class="lab-only"><p class="muted">Loading…</p></div>
+        <div id="app-plan"></div>
+        <h2>Coming later</h2><p>Cloud setups, such as a free database, would be listed here in the same way: every command, what it costs, and how to take it down again. That isn't built yet.</p>
+      </div>
     </section>
 
     <section id="view-learn" class="view" hidden aria-labelledby="learn-title">
-      <div class="page-intro"><p class="eyebrow">LEARN</p><h1 id="learn-title">The ideas behind it, <em>briefly.</em></h1><p>Read what you need. Each setup step explains itself as you reach it.</p></div>
-      <div class="learn-layout">
-        <section class="concept-panel" aria-labelledby="concept-title"><p class="eyebrow">BEFORE YOU BEGIN</p><h2 id="concept-title">Eight ideas worth knowing</h2><div class="concept-grid">
+      <div class="page-intro"><p class="eyebrow">LEARN</p><h1 id="learn-title">How it works, <em>hands-on.</em></h1><p>Four small tools to try, in the order you'll meet each idea. Guess first, then see what really happens. Nothing is scored or saved.</p></div>
+      <div class="lab-app how" id="how-body"></div>
+      <div class="learn-layout learn-solo">
+        <section class="concept-panel" aria-labelledby="concept-title"><p class="eyebrow">GLOSSARY</p><h2 id="concept-title">Eight ideas, in a few lines each</h2><div class="concept-grid">
           <details><summary><span>★</span> Local vs. cloud AI</summary><p>A cloud service such as ChatGPT runs its model on someone else's computers, and your words travel there and back. A local model runs on your own laptop, so your words stay here and it works without internet once it's set up. The trade-off: your laptop's memory limits how big a model you can run, so local models are usually smaller and make more mistakes.</p></details>
           <details><summary><span>★</span> How a reply gets generated</summary><p>Your message is split into tokens, and each token becomes numbers. The model uses its learned parameters to work out which token is likely to come next, adds it, and repeats. That loop is why replies appear piece by piece, and why memory and processor speed set the pace. It's prediction, not looking up facts, which is why answers can sound confident and still be wrong.</p></details>
           <details><summary><span>01</span> Model &amp; runtime</summary><p>The model is a file of learned numbers. It can't do anything by itself. Ollama is the engine that loads that file and turns your question into a reply, so you need both: the engine, and a model for it to run.</p></details>
@@ -131,22 +154,14 @@
           <details><summary><span>04</span> First response &amp; generation speed</summary><p>Two different waits. The first is the pause before anything appears, while the model reads your whole message. The second is how fast the words then flow, measured in tokens per second. A model can start slowly and still type quickly once it gets going.</p></details>
           <details><summary><span>05</span> CPU, GPU &amp; memory</summary><p>The model has to fit in memory before it can run at all, so free memory decides what you can use. Then the processor does the work. If your laptop has a graphics chip, Ollama may use it, which is why the CPU can look idle while replies come fast.</p></details>
           <details><summary><span>06</span> Repeats &amp; fair comparisons</summary><p>The first reply after loading is slower, so we run a warm-up and skip it. Then we ask the same questions three times and look at the middle result. Comparing two laptops only makes sense with the same model, the same settings and the same questions, and with other apps closed.</p></details>
-        </div>
-        <div class="arch-map"><p class="eyebrow">WHAT RUNS WHERE</p><h3>Nothing here is a black box</h3>
-          <ol class="arch-flow">
-            <li><strong>You</strong><span>Ask in your browser tab</span></li>
-            <li><strong>Lab Helper</strong><span>A small program that runs only the steps you approve</span></li>
-            <li><strong>Ollama</strong><span>The engine that runs models</span></li>
-            <li><strong>The model</strong><span>A file of learned numbers</span></li>
-          </ol>
-          <p class="fine-print">All four stay on your laptop. The public website only teaches, and it never connects to them. Once you start the helper, it serves this same site from your laptop, so your results never go online unless you share the file yourself.</p></div></section>
-        <aside class="notebook"><span class="notebook-label">YOUR LAB NOTEBOOK</span><h2>Start with what<br>you know.</h2><p>The optional 10-question check helps you see what you learn. No name or account needed.</p><button class="button dark" id="start-pre">Take the pre-lab quiz <span aria-hidden="true">→</span></button><div id="quiz-history" class="quiz-history"></div><label class="checkline"><input type="checkbox" id="remember-learning"> <span>Save quiz answers and predictions in this browser.</span></label><small>Off by default. Imported benchmark files are never saved by this page.</small><div class="notebook-actions"><button id="export-learning" class="link-button">Export learning record</button><button id="clear-learning" class="link-button">Clear saved learning data</button></div></aside>
+        </div></section>
+        <aside class="notebook quiz-off"><span class="notebook-label">YOUR LAB NOTEBOOK</span><h2>Start with what<br>you know.</h2><p>The optional 10-question check helps you see what you learn. No name or account needed.</p><button class="button dark" id="start-pre">Take the pre-lab quiz <span aria-hidden="true">→</span></button><div id="quiz-history" class="quiz-history"></div><label class="checkline"><input type="checkbox" id="remember-learning"> <span>Save quiz answers and predictions in this browser.</span></label><small>Off by default. Imported benchmark files are never saved by this page.</small><div class="notebook-actions"><button id="export-learning" class="link-button">Export learning record</button><button id="clear-learning" class="link-button">Clear saved learning data</button></div></aside>
       </div>
       <section id="quiz-section" class="panel quiz-panel" hidden aria-labelledby="quiz-title"><div class="section-heading"><div><p class="eyebrow">10 QUESTIONS · NO TIME LIMIT</p><h2 id="quiz-title" tabindex="-1">Pre-lab knowledge check</h2></div><button id="close-quiz" class="button secondary">Close quiz</button></div><p>Choose one answer for each question. Your score appears when you submit, and the explanations come after the post-lab quiz. This is a learning exercise, not a validated research instrument.</p><form id="quiz-form"></form><div id="quiz-feedback" role="status"></div></section>
     </section>
 
     <section id="view-predict" class="view" hidden aria-labelledby="predict-title">
-      <div class="lab-only lab-app"><div class="page-intro"><p class="eyebrow">PREDICT &amp; RUN</p><h1>Make a guess.<br><em>Then ask the hardware.</em></h1><p>Guess how fast your model will be and how much memory it uses, then measure it. Comparing your guess with reality is how you build intuition.</p></div><div id="predict-body"></div></div>
+      <div class="lab-only lab-app"><div class="page-intro"><p class="eyebrow">MEASURE</p><h1>Make a guess.<br><em>Then ask the hardware.</em></h1><p>Guess how fast your model will be and how much memory it uses, then measure it. Comparing your guess with reality is how you build intuition.</p></div><div id="predict-body"></div></div>
       <div class="public-only"><div class="page-intro"><p class="eyebrow">PREDICT &amp; RUN</p><h1 id="predict-title">Make a guess.<br><em>Then ask the hardware.</em></h1><p>Write down what you expect before you measure. Then the real numbers have something to teach you.</p></div>
       <div class="prediction-layout"><section class="panel"><p class="eyebrow">YOUR GUESS</p><h2>What do you expect?</h2><form id="prediction-form"><label for="prediction-tps">Generation speed <span>tokens / second</span></label><input id="prediction-tps" type="number" min="0" max="1000000" step="any" inputmode="decimal" placeholder="e.g. 20" required><label for="prediction-ram">Memory used <span>GiB</span></label><input id="prediction-ram" type="number" min="0" max="1048576" step="any" inputmode="decimal" placeholder="e.g. 3" required><label for="prediction-reason">Why this prediction? <span>optional · stays in this tab</span></label><textarea id="prediction-reason" rows="3" maxlength="600" placeholder="Think about the model's size and your laptop's memory."></textarea><button class="button primary" type="submit">Record prediction <span aria-hidden="true">↗</span></button></form><p id="prediction-status" role="status" class="status-message"></p><div id="prediction-summary" hidden></div></section>
       <section class="protocol-panel"><p class="eyebrow">HOW TO MEASURE FAIRLY</p><h2>Change one thing.<br>Keep the rest steady.</h2><ol class="protocol-list"><li><b>01</b><div><strong>Set the conditions</strong><p>Plug in your laptop, close big apps, and keep the same model and settings between runs.</p></div></li><li><b>02</b><div><strong>Warm up, then repeat</strong><p>The first reply after loading is slower, so the lab runs one warm-up and skips it. Then it asks a short, a medium and a long question three times each.</p></div></li><li><b>03</b><div><strong>Save the results</strong><p>Start the Lab Helper and approve Measure on this page. It saves a results file on your laptop. Anything it couldn't measure stays blank, because a failed measurement is not a zero.</p></div></li><li><b>04</b><div><strong>Read them</strong><p>The Lab Helper shows them under Results right away. You can also open the file under Results on this public site, which never connects to your laptop.</p></div></li></ol><div class="bridge"><span>LAB HELPER</span><span aria-hidden="true">→</span><strong>results file</strong><span aria-hidden="true">→</span><span>THIS SITE</span></div><p class="fine-print">Ollama can reuse work from earlier questions, so repeat runs can look faster. Only compare runs measured the same way.</p><a class="button dark" href="#results">Open Results <span aria-hidden="true">→</span></a></section></div>
@@ -155,9 +170,11 @@
     </section>
 
     <section id="view-results" class="view" hidden aria-labelledby="results-title">
-      <div class="page-intro results-intro"><div><p class="eyebrow">RESULTS</p><h1 id="results-title">Let the numbers<br><em>start a conversation.</em></h1><p><span class="public-only">Bring in your results file, compare runs, and see what they mean. Nothing you bring in is uploaded or kept by this page.</span><span class="lab-only">Your measurements from this laptop. Nothing leaves it unless you download the file yourself.</span></p></div><button id="start-post" class="button secondary">Take the post-lab quiz <span aria-hidden="true">↗</span></button></div>
+      <div class="page-intro results-intro"><div><p class="eyebrow">RESULTS</p><h1 id="results-title">Real results,<br><em>from real laptops.</em></h1><p><span class="public-only">What laptops like yours actually measured. You can also open your own results file below; nothing you bring in is uploaded or kept by this page.</span><span class="lab-only">Your measurements from this laptop. Nothing leaves it unless you download the file yourself.</span></p></div><button id="start-post" class="button secondary quiz-off">Take the post-lab quiz <span aria-hidden="true">↗</span></button></div>
+      <div id="real-results" class="public-only lab-app"></div>
+      <div class="lab-only lab-app"><h2>Your results</h2></div>
       <div id="results-body" class="lab-only lab-app"></div>
-      <section class="import-panel public-only" aria-label="Import benchmark results"><div><span class="import-icon" aria-hidden="true">↥</span><div><h2>Bring your experiment here</h2><p>One JSON session per file · select multiple files · up to 5 MiB each</p><small>Use the file the Lab Helper saved for you. You can bring in up to 30 at once. Before you share a file with anyone, check that the nickname and details inside it are ones you're happy to share.</small></div></div><div class="button-row"><button id="import-json" class="button primary">Import JSON <span aria-hidden="true">＋</span></button><input id="session-files" type="file" accept=".json,application/json" aria-label="Choose benchmark JSON files" tabindex="-1" multiple><button class="button secondary" id="load-examples">Try synthetic examples</button></div><p class="fine-print">To compare models, measure each one on your laptop first, then select both saved session JSON files from <code>agent/results/</code> together. Charts show each model by name. This compares speed and resource use, and doesn't record or score answer quality. For answers, use Compare on the Use it page.</p></section>
+      <section class="import-panel public-only" aria-label="Import benchmark results"><div><span class="import-icon" aria-hidden="true">↥</span><div><h2>Open your own results file</h2><p>One JSON session per file · select multiple files · up to 5 MiB each</p><small>Use the file the Lab Helper saved for you. You can bring in up to 30 at once. Before you share a file with anyone, check that the nickname and details inside it are ones you're happy to share.</small></div></div><div class="button-row"><button id="import-json" class="button primary">Import JSON <span aria-hidden="true">＋</span></button><input id="session-files" type="file" accept=".json,application/json" aria-label="Choose benchmark JSON files" tabindex="-1" multiple><button class="button secondary" id="load-examples">Try synthetic examples</button></div><p class="fine-print">To compare models, measure each one on your laptop first, then select both saved session JSON files from <code>agent/results/</code> together. Charts show each model by name. This compares speed and resource use, and doesn't record or score answer quality. For answers, use Compare on the Use it page.</p></section>
       <div id="import-messages" class="import-messages" role="status" aria-live="polite"></div>
       <div id="synthetic-banner" class="notice synthetic-notice" hidden><strong>SYNTHETIC DATA</strong><span>Invented values for learning and interface demonstration. They are not real hardware measurements and must not be used as project evidence.</span></div>
       <div class="results-toolbar"><div class="filters"><label>Device<select id="filter-device"><option value="">All devices</option></select></label><label>Model<select id="filter-model"><option value="">All models</option></select></label><label>Prompt<select id="filter-prompt"><option value="">All prompts</option></select></label><label>Data<select id="filter-kind"><option value="">All data</option><option value="measured">Measured only</option><option value="synthetic">Synthetic only</option></select></label></div><button class="link-button" id="clear-results" disabled>Clear imported results</button></div>
@@ -170,15 +187,6 @@
         <div id="use-body"><p class="muted">Loading…</p></div></div>
     </section>
 
-    <section id="view-apps" class="view lab-only" hidden aria-labelledby="apps-title">
-      <div class="lab-app"><div class="page-intro"><p class="eyebrow">APPS</p><h1 id="apps-title">Set up more, <em>the same way.</em></h1><p>The same cards and the same rules as a model: you see the exact command, you approve it, it's logged in My lab, and you can undo it. Nothing here needs your password.</p></div>
-        <h2>Ready-made setups</h2><p>A short list of the lab's usual steps, ending in one check. Read your course's own setup page first, because these don't replace it.</p>
-        <div id="recipes-body"><p class="muted">Loading…</p></div>
-        <div id="recipe-plan"></div>
-        <h2>One app at a time</h2>
-        <div id="apps-body"><p class="muted">Loading…</p></div>
-        <div id="app-plan"></div></div>
-    </section>
 
     <section id="view-mylab" class="view lab-only" hidden aria-labelledby="mylab-title">
       <div class="lab-app"><div class="page-intro"><p class="eyebrow">MY LAB</p><h1 id="mylab-title">What's on <em>this laptop.</em></h1><p>Your models, your measurements, and everything the agent has done. This stays on your laptop.</p></div>

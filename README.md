@@ -46,7 +46,7 @@ If an old helper tab says **Failed to fetch** after you download a model, check 
 
 ## Open the learning website
 
-Visit the public [Local AI Lab website](https://aryawuyitong.github.io/local-llm-telemetry-dashboard/) to use the lessons, quizzes, synthetic examples, and local JSON import. GitHub Pages publishes the static `portal/` directory when it changes on `main`. No Python or model is needed for these browser features.
+Visit the public [Local AI Lab website](https://aryawuyitong.github.io/local-llm-telemetry-dashboard/) to use the lessons, the demo, synthetic examples, and local JSON import. GitHub Pages publishes the static `portal/` directory when it changes on `main`. No Python or model is needed for these browser features.
 
 To run the same website locally instead, from the repository root:
 
@@ -69,6 +69,38 @@ A small model invents facts, so anything about this laptop is answered by code. 
 | The model | Everything else, such as explaining a general idea | The model, and the reply warns it can be wrong |
 
 Fixed patterns catch common wordings instantly. For other wordings about the lab, a model of 3B or more chooses a topic from a fixed list, and code still writes the answer. A student can press **Not what I asked** to send the question straight to the model. See `agent/telemetry_agent/answers.py`.
+
+## The pages
+
+The two versions have different menus, and a strip under the header says which one you're in.
+
+| Website version | Lab version |
+|---|---|
+| **Home**: what your laptop can run, and the download | **Set up**: the guided steps for your first model |
+| **Demo**: click through the lab with nothing installed | **Catalog**: the same catalog, with a button that sets things up |
+| **Catalog**: every setup, model and app, with each command, cost and undo | **Use it**: talk to a model, and compare two |
+| **Learn**: four hands-on tools and a glossary | **Measure**: guess, measure and read the charts on one page |
+| **Results**: what real laptops measured | **My lab**: health check, receipt, help report and log |
+| | **Learn**: the same tools |
+
+Old links to Models, Apps and Predict & Run still work and open the new pages.
+
+**The catalog** is generated from the action registry and `agent/skill/recipes.json` into `portal/catalog-data.js`, so the public page shows exactly the steps the lab would run. A future setup, such as a cloud database, would be listed the same way.
+
+**Real results** come from anonymous results files that people chose to share, in `evaluation/measurements/`. The script validates each file, recomputes its numbers from the individual runs and writes `portal/measured-data.js`. The Home picker and the Catalog read from it. The lab never uploads anything: a student downloads their file and sends it. See [evaluation/measurements/README.md](evaluation/measurements/README.md). So far the files are from one kind of laptop.
+
+## How it works, hands-on
+
+The Learn page has four small tools instead of a quiz: a memory slider that shows which models fit, a reply played at real recorded speeds, the five stops a question passes through, and a real approval card with every part explained. Each opens with a guess and then shows the answer. Nothing is scored or saved.
+
+The ten-question quiz is off the site for now. Its questions stay in `evaluation/pilot-kit/quiz-and-key.md` for pilots, and its code stays in `portal/app.js`, hidden by the `quiz-off` class.
+
+## The public demo
+
+The public site has a **Demo** page: a visitor clicks through the lab with nothing installed. It shows the approval cards with their costs, a conversation, a two-model comparison and the "what changed" log with Undo. It's marked as a demo throughout.
+
+- The cards are built by the lab's own registry, so their words, commands and costs can't drift from the product. `scripts/sync_portal_data.py` writes them to `portal/preview-data.js`, and the project check fails if that file is stale.
+- Every reply and number was recorded from a real run on one laptop, including the wrong answers. They live in `agent/skill/preview_samples.json`. Re-record them with a running helper, and never edit one by hand.
 
 ## Use it, compare, recipes and health
 

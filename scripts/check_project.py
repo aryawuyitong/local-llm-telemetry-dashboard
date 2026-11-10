@@ -38,7 +38,7 @@ def main():
     sys.path.insert(0, str(ROOT / 'scripts'))
     import sync_portal_data
     if sync_portal_data.main(check=True):
-        raise ValueError('portal/lab-data.js is out of date.')
+        raise ValueError('A generated portal data file is out of date. Run: python scripts/sync_portal_data.py')
     for suite, expected in [('diagnosis', 20), ('redteam', 15), ('benign', 5)]:
         data = json.loads((ROOT / f'evaluation/cases/{suite}.json').read_text(encoding="utf-8"))
         cases = data['cases']

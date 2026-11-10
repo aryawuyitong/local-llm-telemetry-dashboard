@@ -270,3 +270,83 @@ html.assistant-open .assistant-toggle { display: none; }
 .lab-app .health li.warn::before { content: "!"; color: var(--warn); font-weight: 700; }
 .lab-app .health li.optional::before { content: "–"; color: var(--muted); }
 .lab-app .health .proposal { margin-top: 8px; }
+
+/* The public demo */
+.lab-app .demo-flag { position: sticky; top: 8px; z-index: 3; }
+.lab-app .pv-log { max-height: 380px; min-height: 90px; }
+.lab-app .pv-chips { padding: 0; margin: 4px 0 8px; }
+.lab-app .pv-chips .chip { font-size: 13px; padding: 6px 12px; }
+.lab-app .pv-end { margin-top: 18px; border-color: var(--accent); }
+.lab-app .pv-end .btn { text-decoration: none; }
+
+/* The quiz is off the site for now. Its code and questions stay, so removing this class brings it back. */
+.quiz-off { display: none !important; }
+.learn-layout.learn-solo { grid-template-columns: minmax(0, 1fr); }
+
+/* How it works: four tools to learn by trying */
+.how { margin-bottom: 40px; }
+.how .how-tool { margin-top: 34px; }
+.how .how-tool h2 { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+.how .how-tool .n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: 600 14px/1 inherit; font-family: inherit; }
+.how .how-lede { color: var(--muted); margin: 0 0 12px; }
+.how .how-guess { padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+.how .how-guess p:first-child { margin-top: 0; }
+.how .how-guess .actions { margin-top: 8px; }
+.how .btn.picked { border-color: var(--warn); }
+.how .how-bar { position: relative; height: 26px; border-radius: 8px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
+.how .how-bar-fill { display: block; height: 100%; width: 0; border-radius: 8px 0 0 8px; background: var(--ok); transition: width .2s ease-out; }
+.how .how-bar-fill.tight { background: var(--warn); }
+.how .how-bar-fill.no { background: var(--bad); }
+.how .how-mark { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text); opacity: .35; }
+.how .how-mark.half { left: 50%; }
+.how .how-mark.three { left: 75%; }
+.how .how-bar-key { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 6px; margin-top: 4px; }
+.how .how-bar-key span:nth-child(2) { text-align: right; padding-right: 4px; }
+.how .how-bar-key span:nth-child(3) { text-align: center; }
+.how .how-reply { min-height: 132px; padding: 12px 14px; margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; }
+.how .how-reply p { margin: 0 0 6px; }
+.how .how-stops { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0 0 12px; }
+.how .how-stop { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 14px; font-weight: 600; padding: 7px 12px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); color: var(--text); cursor: pointer; }
+.how .how-stop b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--surface-2); font-size: 12px; }
+.how .how-stop.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.how .how-stop-card { box-shadow: none; min-height: 210px; }
+.how .how-card-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.how .how-card { margin: 0; }
+.how .how-part { display: block; width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 1px solid transparent; border-radius: 8px; padding: 7px 8px; margin-top: 4px; cursor: pointer; }
+.how .how-part:hover { border-color: var(--border); }
+.how .how-part.on { border-color: var(--accent); background: var(--accent-soft); }
+.how .how-part-title { display: block; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.how .how-part .risk { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; margin: 0; }
+.how .how-part .risk > span { display: block; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13.5px; }
+.how .how-part .risk > span.note { border-color: var(--warn); background: transparent; margin: 0; }
+.how .how-fake-btn { display: inline-block; font-weight: 600; font-size: 14px; padding: 8px 14px; margin-right: 8px; border: 1px solid var(--border); border-radius: 9px; }
+.how .how-fake-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.how .how-explain { position: sticky; top: 16px; border-color: var(--accent); box-shadow: none; }
+@media (max-width: 760px) { .how .how-card-layout { grid-template-columns: 1fr; } .how .how-explain { position: static; } .how .how-bar-key { font-size: 11px; } }
+
+/* Which version is this? One line under the header, on every page. */
+.mode-strip { margin: 0; padding: 7px max(24px, calc((100vw - 1240px) / 2)); font-size: 13.5px; background: #ebe5c7; color: #5c4a0c; }
+.mode-strip.in-lab { background: #e5eee4; color: #2f6b55; }
+.mode-strip a { color: inherit; }
+html[data-mode=lab] .results-intro { display: none; }
+
+/* Home: what happens after the download, and help */
+.lab-next { padding: 8px max(24px, calc((100vw - 1240px) / 2)) 28px; }
+.lab-next ol { margin: 10px 0 0; padding-left: 22px; max-width: 760px; }
+.lab-next li { margin: 6px 0; }
+.lab-help-title { padding: 0 max(24px, calc((100vw - 1240px) / 2)); margin: 36px 0 0; }
+
+/* Catalog */
+.catalog h2 { margin-top: 36px; }
+.catalog .cat-os { display: flex; align-items: center; gap: 8px; }
+.catalog .cat-os [aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.catalog .cat-recipe details { margin: 4px 0 8px; }
+.catalog .cat-recipe summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.catalog .cat-steps { list-style: none; padding: 0; margin: 10px 0 0; }
+.catalog .cat-steps li { padding: 10px 0; border-top: 1px solid var(--border); }
+.catalog .cat-steps p { margin: 4px 0 0; }
+.catalog .cards .card a.btn { text-decoration: none; }
+#real-results { margin-bottom: 26px; }
+#real-results .num { text-align: right; font-variant-numeric: tabular-nums; }
+#real-results .cat-share { margin-top: 10px; }
+#real-results .cat-share summary { cursor: pointer; font-weight: 600; color: var(--accent); }

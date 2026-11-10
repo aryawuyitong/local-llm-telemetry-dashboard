@@ -94,8 +94,8 @@ def status(lab):
         pick, _ = lab._goal_pick("try")
         proposals = [("pull_model", {"model": pick["name"]})] if pick else []
         return _reply("status", "checked", f"Almost. Ollama is running, but no model is on this laptop yet.{gone}\n\n"
-                      + ("Next step: download one. This card has a suggestion that fits your memory." if pick else "Next step: pick one on the Models page."),
-                      read, proposals, [_link("See the models", "models")])
+                      + ("Next step: download one. This card has a suggestion that fits your memory." if pick else "Next step: pick one on the Catalog page."),
+                      read, proposals, [_link("See the models", "catalog")])
     lines = [f"Ollama is running, and these models have their files on disk: {_names(rt['lab_models'])}."]
     if rt.get("broken_models"):
         lines.append(f"These are listed without a file, so they can't run: {_names(rt['broken_models'])}.")
@@ -158,7 +158,7 @@ def fit(lab):
         if pick["name"] not in lab.runtime_state()["models"]:
             proposals.append(("pull_model", {"model": pick["name"]}))
     lines.append("These needs are planning estimates, so your real numbers will differ.")
-    return _reply("fit", "checked", "\n\n".join(lines), ["this laptop's memory and disk", "the lab's model list"], proposals, [_link("See every model", "models")])
+    return _reply("fit", "checked", "\n\n".join(lines), ["this laptop's memory and disk", "the lab's model list"], proposals, [_link("See every model", "catalog")])
 
 
 def model_facts(lab, tag):
@@ -186,10 +186,10 @@ def measurements(lab):
         proposals = [("benchmark", {"model": _smallest(lab, rt["lab_models"]), "repeats": 3})] if rt["lab_models"] else []
         return _reply("measurements", "checked", "You haven't measured anything on this laptop yet."
                       + (" This card measures your smallest model." if proposals else " Download a model first."),
-                      ["your saved results"], proposals, [_link("Predict & Run", "predict")])
+                      ["your saved results"], proposals, [_link("Open Measure", "measure")])
     lines = "\n".join(_measure_line(tag, row) for tag, row in runs.items())
     return _reply("measurements", "checked", f"Your latest measurements on this laptop:\n\n{lines}\n\nA faster reply says nothing about whether the answer is good. "
-                  "Use it has a side-by-side comparison for that.", ["your saved results"], links=[_link("See the charts", "results")])
+                  "Use it has a side-by-side comparison for that.", ["your saved results"], links=[_link("See the charts", "measure")])
 
 
 def changed(lab):
@@ -208,7 +208,7 @@ def hardware(lab):
     text = (f"{hw['os']} {hw['os_version']}, {hw['cpu_model']}.\n\n"
             f"- Memory: {hw['total_ram_gb']} GB in total, {hw['available_ram_gb']} GB free right now\n"
             f"- Free disk: {hw['free_disk_gb']} GB\n- Graphics: {hw['gpu']}\n- Python: {hw['python']}")
-    return _reply("hardware", "checked", text, ["this laptop's system information"], links=[_link("Which models fit?", "models")])
+    return _reply("hardware", "checked", text, ["this laptop's system information"], links=[_link("Which models fit?", "catalog")])
 
 
 def reopen(lab):
@@ -233,7 +233,7 @@ def download_time(lab):
     rows = [m for m in sorted(lab.allowed.values(), key=lambda m: m["params_b"]) if not m["license_gate"]][:3]
     lines = "\n".join(f"- `{m['ollama_tag']}`, about {m['size_gb']} GB: {_download_time(m['size_gb'])}" + (" (already here)" if m["ollama_tag"] in rt["models"] else "") for m in rows)
     return _reply("download_time", "checked", f"It depends on your connection. These are worked out from each model's size, and they're only estimates:\n\n{lines}\n\n"
-                  "Every download card shows its own estimate before you approve it.", ["the lab's model list", "the model files on disk"], links=[_link("See every model", "models")])
+                  "Every download card shows its own estimate before you approve it.", ["the lab's model list", "the model files on disk"], links=[_link("See every model", "catalog")])
 
 
 def stop_model(lab):
@@ -243,8 +243,8 @@ def stop_model(lab):
 
 def setups(lab):
     listed = "\n".join(f"- **{r['title']}**: {r['for']}." for r in lab.setups.values())
-    return _reply("recipes", "notes", f"The Apps page has ready-made setups. Each one is a list of the lab's usual steps, ending in one check, and you still approve every step:\n\n{listed}\n\n"
-                  "None of them replaces your course's own setup page, so read that first.", links=[_link("See the setups", "apps")])
+    return _reply("recipes", "notes", f"The Catalog page has ready-made setups. Each one is a list of the lab's usual steps, ending in one check, and you still approve every step:\n\n{listed}\n\n"
+                  "None of them replaces your course's own setup page, so read that first.", links=[_link("See the setups", "catalog")])
 
 
 def slow(lab):
@@ -258,7 +258,7 @@ def slow(lab):
     if runs:
         lines.append("Your measured speeds, to compare against:\n" + "\n".join(_measure_line(t, r) for t, r in runs.items()))
     lines.append("The first reply after loading is also always slower. If it stays slow, try a smaller model.")
-    return _reply("slow", "checked", "\n\n".join(lines), ["this laptop's free memory", "your saved results"], links=[_link("Measure it", "predict")])
+    return _reply("slow", "checked", "\n\n".join(lines), ["this laptop's free memory", "your saved results"], links=[_link("Measure it", "measure")])
 
 
 def last_problem(lab):
@@ -306,18 +306,18 @@ def _ask_for_app(lab, app, step):
     if step == "remove_model":
         return _reply("step", "checked", f"Here's the step that removes {name}. Nothing happens until you approve it. The lab only removes apps it installed.", ["the Applications folder"], [("remove_app", {"app": app})])
     if at:
-        return _reply("step", "checked", f"{name} is already installed at `{at}`.", ["the Applications folder"], links=[_link("See the apps", "apps")])
+        return _reply("step", "checked", f"{name} is already installed at `{at}`.", ["the Applications folder"], links=[_link("See the apps", "catalog")])
     action = app_plan(ctx)[0]
     if action == "install_app":
         return _reply("step", "checked", f"Here's the step that installs {name}. Nothing happens until you approve it.", ["the Applications folder", "this laptop's installer"], [("install_app", {"app": app})])
-    return _reply("step", "checked", f"This laptop has no {ctx['manager']['name']}, so {name} is a manual install from its official page. The Apps page has the link.",
-                  ["this laptop's installer"], links=[_link("See the apps", "apps")])
+    return _reply("step", "checked", f"This laptop has no {ctx['manager']['name']}, so {name} is a manual install from its official page. The Catalog page has the link.",
+                  ["this laptop's installer"], links=[_link("See the apps", "catalog")])
 
 
 def _other_app(name):
     apps = " and ".join(a["name"] for a in APPS.values())
     return _reply("step", "notes", f"I can't install {name}. The lab only installs {apps}, because each one has a reviewed card with an exact command and an undo. "
-                  "Use its official page for anything else.", links=[_link("See the apps", "apps")])
+                  "Use its official page for anything else.", links=[_link("See the apps", "catalog")])
 
 
 def _ask_for_step(lab, text, step):

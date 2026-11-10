@@ -5,11 +5,14 @@
   const DOWNLOAD_URL = 'https://github.com/aryawuyitong/local-llm-telemetry-dashboard/archive/refs/heads/main.zip';
   const REPO = 'https://github.com/aryawuyitong/local-llm-telemetry-dashboard.git';
   const DISK_RESERVE_GIB = 2;
-  // Real runs only. Add a laptop here after a valid nine-run session; never add invented numbers.
-  const MEASURED = {
-    'qwen2.5:0.5b': [{ device: 'Apple M5, 16 GB', tps: '101–146', peakMib: 859, runs: 9 }],
-    'qwen2.5:1.5b': [{ device: 'Apple M5, 16 GB', tps: '22–40', peakMib: 1556, runs: 18 }],
-  };
+  // Real runs only: built from the anonymous results in evaluation/measurements (see measured-data.js). Never type a number in here.
+  const MEASURED = {};
+  for (const kind of (root.LocalLabMeasured || { kinds: [] }).kinds) for (const m of kind.models) {
+    (MEASURED[m.model] = MEASURED[m.model] || []).push({ device: kind.device, ram_gb: kind.ram_gb, peakMib: m.peak_mib, runs: m.runs,
+      tps: m.tps_low === m.tps_high ? `${Math.round(m.tps)}` : `${Math.round(m.tps_low)}–${Math.round(m.tps_high)}` });
+  }
+  // Laptops like yours first: the same memory, then anything measured.
+  const measuredRun = (tag, memory) => (MEASURED[tag] || []).slice().sort((x, y) => (y.ram_gb === memory) - (x.ram_gb === memory))[0];
 
   function modelFit(model, memoryGib, diskGib) {
     if (diskGib - model.size_gb < DISK_RESERVE_GIB) return { verdict: 'no', label: "Won't fit", reason: `About ${model.size_gb} GB to download, and we keep ${DISK_RESERVE_GIB} GB free for your system.` };
@@ -42,7 +45,7 @@
     return ready.find(m => m.params_b >= 1.5) || ready[0] || (tight ? tight[0] : null);
   }
 
-  const api = { DOWNLOAD_URL, MEASURED, modelFit, matchErrors, directCommands, startingModel };
+  const api = { DOWNLOAD_URL, MEASURED, measuredRun, modelFit, matchErrors, directCommands, startingModel };
   root.LocalLabGuide = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof document === 'undefined' || !document.getElementById('answer')) return;
@@ -63,7 +66,7 @@
     const box = $('#answer'); box.replaceChildren();
     const model = startingModel(models, memory);
     if (!model) { box.append(el('p', 'Not yet.', 'lab-verdict no'), el('p', 'Our smallest suitable model needs more free memory than this laptop usually has.', 'lab-sub')); return; }
-    const fit = modelFit(model, memory, 100), run = (MEASURED[model.ollama_tag] || [])[0];
+    const fit = modelFit(model, memory, 100), run = measuredRun(model.ollama_tag, memory);
     const fitting = models.filter(m => modelFit(m, memory, 100).verdict === 'yes').length;
     const sub = el('p', 'Start with ', 'lab-sub'); sub.append(el('code', model.ollama_tag));
     sub.append(document.createTextNode(fitting > 1 ? `. ${fitting} of our ${models.length} approved models should fit. ` : '. '));
@@ -76,7 +79,6 @@
     const download = el('a', `Download for ${mac ? 'Mac' : 'Windows'}`, 'button primary'); download.href = DOWNLOAD_URL; download.rel = 'noopener noreferrer';
     acts.append(download, el('span', 'No Python? The launcher offers to add a private copy (about 25 MB).', 'lab-quiet'));
     box.append(el('p', fit.verdict === 'yes' ? 'Yes.' : 'Yes, if you close some apps.', 'lab-verdict ' + fit.verdict), sub, cells, acts);
-    $('#step-size').textContent = `About ${model.size_gb} GB · one-click undo`;
   }
   // When the helper serves this site, verdicts come from this laptop rather than a memory button.
   let labFit = null, labRuns = [];
@@ -85,7 +87,7 @@
     const grid = $('#model-grid'); grid.replaceChildren();
     for (const model of models) {
       const here = labFit && labFit.find(m => m.name === model.ollama_tag);
-      const fit = here ? { verdict: LAB_VERDICT[here.verdict][0], label: LAB_VERDICT[here.verdict][1] } : memory ? modelFit(model, memory, 100) : null, run = (MEASURED[model.ollama_tag] || [])[0];
+      const fit = here ? { verdict: LAB_VERDICT[here.verdict][0], label: LAB_VERDICT[here.verdict][1] } : memory ? modelFit(model, memory, 100) : null, run = measuredRun(model.ollama_tag, memory);
       const mine = labRuns.find(r => r.model === model.ollama_tag && r.median_tps != null);
       const card = el('article', undefined, 'lab-model' + (fit ? ' fit-' + fit.verdict : ''));
       const top = el('div', undefined, 'lab-model-top');
@@ -126,29 +128,11 @@
     out.append(el('h3', hit.title), el('p', hit.cause), steps);
   });
 
-  // Scroll work stays cheap: measure only when the layout changes, and move two elements with transforms.
-  const page = document.documentElement, pin = $('#pin'), track = $('#track'), prog = $('#prog'), glow = $('#glow');
-  let pinTop = 0, pinSpan = 1, travel = 0, pageSpan = 1, active = false;
-  let current = 0, target = 0, frame = 0;
-  function moveTrack() {
-    const gap = target - current;
-    current = still || Math.abs(gap) < 0.5 ? target : current + gap * 0.32;
-    track.style.transform = active ? `translate3d(${-current.toFixed(1)}px,0,0)` : '';
-    frame = current === target ? 0 : requestAnimationFrame(moveTrack);
-  }
-  function onScroll() {
-    prog.style.transform = `scaleX(${Math.min(1, scrollY / pageSpan).toFixed(4)})`;
-    target = active ? Math.min(1, Math.max(0, (scrollY - pinTop) / pinSpan)) * travel : 0;
-    if (!frame) frame = requestAnimationFrame(moveTrack);
-  }
-  function measure() {
-    active = innerWidth > 820 && !!pin.offsetParent;
-    pinTop = pin.getBoundingClientRect().top + scrollY;
-    pinSpan = Math.max(1, pin.offsetHeight - innerHeight);
-    travel = active ? Math.max(0, track.scrollWidth - innerWidth) : 0;
-    pageSpan = Math.max(1, page.scrollHeight - innerHeight);
-    onScroll();
-  }
+  // The thin progress line under the header: one transform, updated on scroll.
+  const page = document.documentElement, prog = $('#prog'), glow = $('#glow');
+  let pageSpan = 1;
+  const onScroll = () => { prog.style.transform = `scaleX(${Math.min(1, scrollY / pageSpan).toFixed(4)})`; };
+  const measure = () => { pageSpan = Math.max(1, page.scrollHeight - innerHeight); onScroll(); };
   addEventListener('scroll', onScroll, { passive: true });
   addEventListener('resize', measure);
   addEventListener('hashchange', () => { requestAnimationFrame(measure); });

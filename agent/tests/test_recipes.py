@@ -127,7 +127,7 @@ class Plans(unittest.TestCase):
     def test_the_assistant_knows_about_them(self):
         got = answers.answer(self.lab, "can you set up my laptop for a course?")
         self.assertEqual(got["id"], "recipes")
-        self.assertEqual(got["links"][0]["goto"], "apps")
+        self.assertEqual(got["links"][0]["goto"], "catalog")
         self.assertIn("Coding starter", got["text"])
 
 

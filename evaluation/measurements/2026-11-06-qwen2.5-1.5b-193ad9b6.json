@@ -1,0 +1,421 @@
+{
+ "schema_version": "1.0",
+ "protocol_version": "local-llm-lab/1",
+ "data_kind": "measured",
+ "session_id": "193ad9b65ab48d2d93b4bb7cad3353a3",
+ "created_at": "2026-11-06T16:52:55.916Z",
+ "device": {
+  "alias": "device-193ad9b6",
+  "os": "macOS",
+  "os_version": "27.0.1",
+  "cpu_model": "Apple M5",
+  "logical_cores": 10,
+  "total_ram_gib": 16.0,
+  "gpu": "Apple GPU (Metal, shares system RAM)",
+  "arch": "arm64"
+ },
+ "runtime": {
+  "name": "ollama",
+  "version": "0.33.3"
+ },
+ "model": {
+  "name": "qwen2.5:1.5b",
+  "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+  "quantization": "Q4_K_M",
+  "acceleration": "gpu-assisted"
+ },
+ "config": {
+  "temperature": 0,
+  "max_output_tokens": 128,
+  "repeats": 3,
+  "context_tokens": 2048
+ },
+ "warmup_round_trip_s": 0.0931,
+ "predictions": {
+  "tps": 20,
+  "ram_gib": 2
+ },
+ "runs": [
+  {
+   "run_id": "b000d88881e2a7135b4d04e34d6683a4",
+   "prompt_id": "short",
+   "repeat_index": 1,
+   "timestamp": "2026-11-06T16:52:43.351Z",
+   "status": "ok",
+   "measurements": {
+    "ttft_ms": 72.533,
+    "decode_tps": 47.388,
+    "cpu_percent_normalized": 11.139,
+    "peak_rss_mib": 1311.359
+   },
+   "sources": {
+    "ttft_ms": "client_monotonic_first_nonempty_text",
+    "decode_tps": "ollama.eval_count/eval_duration_ns",
+    "cpu_percent_normalized": "psutil.process_cpu_times/logical_cores",
+    "peak_rss_mib": "psutil.sum_runtime_process_rss",
+    "output_tokens": 28,
+    "decode_duration_s": 0.590861,
+    "sample_interval_s": 0.1,
+    "process_count": 2,
+    "process_attribution": "endpoint_owner_and_children",
+    "cache_policy": "unique_prefix_per_run_cache_not_guaranteed_disabled",
+    "prompt_hash": "4f9bfb5a0d53bb2ab4925513267903a199000956c6faecf8de36c818d75c35f6"
+   },
+   "quality_flags": [],
+   "error": null
+  },
+  {
+   "run_id": "a871cb276b36d82091090dd687ebe481",
+   "prompt_id": "short",
+   "repeat_index": 2,
+   "timestamp": "2026-11-06T16:52:43.846Z",
+   "status": "ok",
+   "measurements": {
+    "ttft_ms": 48.728,
+    "decode_tps": 51.664,
+    "cpu_percent_normalized": 11.351,
+    "peak_rss_mib": 1311.719
+   },
+   "sources": {
+    "ttft_ms": "client_monotonic_first_nonempty_text",
+    "decode_tps": "ollama.eval_count/eval_duration_ns",
+    "cpu_percent_normalized": "psutil.process_cpu_times/logical_cores",
+    "peak_rss_mib": "psutil.sum_runtime_process_rss",
+    "output_tokens": 19,
+    "decode_duration_s": 0.367759,
+    "sample_interval_s": 0.1,
+    "process_count": 2,
+    "process_attribution": "endpoint_owner_and_children",
+    "cache_policy": "unique_prefix_per_run_cache_not_guaranteed_disabled",
+    "prompt_hash": "c4b6bef1e4f7be2617630eac69070e8a8be3fa3251881203b16850df535646b9"
+   },
+   "quality_flags": [],
+   "error": null
+  },
+  {
+   "run_id": "0ed4d06c0430ee88d6742d2e93c9ecbc",
+   "prompt_id": "short",
+   "repeat_index": 3,
+   "timestamp": "2026-11-06T16:52:44.353Z",
+   "status": "ok",
+   "measurements": {
+    "ttft_ms": 66.387,
+    "decode_tps": 51.506,
+    "cpu_percent_normalized": 11.501,
+    "peak_rss_mib": 1314.953
+   },
+   "sources": {
+    "ttft_ms": "client_monotonic_first_nonempty_text",
+    "decode_tps": "ollama.eval_count/eval_duration_ns",
+    "cpu_percent_normalized": "psutil.process_cpu_times/logical_cores",
+    "peak_rss_mib": "psutil.sum_runtime_process_rss",
+    "output_tokens": 19,
+    "decode_duration_s": 0.368886,
+    "sample_interval_s": 0.1,
+    "process_count": 2,
+    "process_attribution": "endpoint_owner_and_children",
+    "cache_policy": "unique_prefix_per_run_cache_not_guaranteed_disabled",
+    "prompt_hash": "bfcb3e757547948b972964dd81a2bf012b66de2599ac2c45dd7bb1f9a866ff9a"
+   },
+   "quality_flags": [],
+   "error": null
+  },
+  {
+   "run_id": "c0ae605d7cc1719021f6ffe8248834e1",
+   "prompt_id": "medium",
+   "repeat_index": 1,
+   "timestamp": "2026-11-06T16:52:46.577Z",
+   "status": "ok",
+   "measurements": {
+    "ttft_ms": 67.137,
+    "decode_tps": 47.034,
+    "cpu_percent_normalized": 14.513,
+    "peak_rss_mib": 1318.547
+   },
+   "sources": {
+    "ttft_ms": "client_monotonic_first_nonempty_text",
+    "decode_tps": "ollama.eval_count/eval_duration_ns",
+    "cpu_percent_normalized": "psutil.process_cpu_times/logical_cores",
+    "peak_rss_mib": "psutil.sum_runtime_process_rss",
+    "output_tokens": 98,
+    "decode_duration_s": 2.083578,
+    "sample_interval_s": 0.1,
+    "process_count": 2,
+    "process_attribution": "endpoint_owner_and_children",
+    "cache_policy": "unique_prefix_per_run_cache_not_guaranteed_disabled",
+    "prompt_hash": "1174891a7426bc9afc8c26c7e7ea56ad098749653e2165391c8362c940016f5f"
+   },
+   "quality_flags": [],
+   "error": null
+  },
+  {
+   "run_id": "68737f448965e74bbe4108ea34aacb77",
+   "prompt_id": "medium",
+   "repeat_index": 2,
+   "timestamp": "2026-11-06T16:52:48.278Z",
+   "status": "ok",
+   "measurements": {
+    "ttft_ms": 53.643,
+    "decode_tps": 46.078,
+    "cpu_percent_normalized": 20.283,
+    "peak_rss_mib": 1323.375
+   },
+   "sources": {
+    "ttft_ms": "client_monotonic_first_nonempty_text",
+    "decode_tps": "ollama.eval_count/eval_duration_ns",
+    "cpu_percent_normalized": "psutil.process_cpu_times/logical_cores",
+    "peak_rss_mib": "psutil.sum_runtime_process_rss",
+    "output_tokens": 72,
+    "decode_duration_s": 1.562581,
+    "sample_interval_s": 0.1,
+    "process_count": 2,
+    "process_attribution": "endpoint_owner_and_children",
+    "cache_policy": "unique_prefix_per_run_cache_not_guaranteed_disabled",
+    "prompt_hash": "b7aa30ce26edd12e8be2169ca2315901581beedcecd4200c27307ac16357b7ea"
+   },
+   "quality_flags": [],
+   "error": null
+  },
+  {
+   "run_id": "4eedfcf9c34731946b997712ca5ff179",
+   "prompt_id": "medium",
+   "repeat_index": 3,
+   "timestamp": "2026-11-06T16:52:49.953Z",
+   "status": "ok",
+   "measurements": {
+    "ttft_ms": 57.491,
+    "decode_tps": 47.242,
+    "cpu_percent_normalized": 17.275,
+    "peak_rss_mib": 1327.484
+   },
+   "sources": {
+    "ttft_ms": "client_monotonic_first_nonempty_text",
+    "decode_tps": "ollama.eval_count/eval_duration_ns",
+    "cpu_percent_normalized": "psutil.process_cpu_times/logical_cores",
+    "peak_rss_mib": "psutil.sum_runtime_process_rss",
+    "output_tokens": 72,
+    "decode_duration_s": 1.524052,
+    "sample_interval_s": 0.1,
+    "process_count": 2,
+    "process_attribution": "endpoint_owner_and_children",
+    "cache_policy": "unique_prefix_per_run_cache_not_guaranteed_disabled",
+    "prompt_hash": "8c613c015345f179cba1c2223f57f2a8db723c77aee3b422d2549e8a3b0dafc5"
+   },
+   "quality_flags": [],
+   "error": null
+  },
+  {
+   "run_id": "b071a9437e0255bcbacffdf2d0a4237d",
+   "prompt_id": "long",
+   "repeat_index": 1,
+   "timestamp": "2026-11-06T16:52:51.954Z",
+   "status": "ok",
+   "measurements": {
+    "ttft_ms": 140.248,
+    "decode_tps": 45.065,
+    "cpu_percent_normalized": 16.087,
+    "peak_rss_mib": 1334.688
+   },
+   "sources": {
+    "ttft_ms": "client_monotonic_first_nonempty_text",
+    "decode_tps": "ollama.eval_count/eval_duration_ns",
+    "cpu_percent_normalized": "psutil.process_cpu_times/logical_cores",
+    "peak_rss_mib": "psutil.sum_runtime_process_rss",
+    "output_tokens": 80,
+    "decode_duration_s": 1.775217,
+    "sample_interval_s": 0.1,
+    "process_count": 2,
+    "process_attribution": "endpoint_owner_and_children",
+    "cache_policy": "unique_prefix_per_run_cache_not_guaranteed_disabled",
+    "prompt_hash": "8cc908d432d79e6c6328538c67ea8aa7be7f0424200a005d2a363d49eac07e9d"
+   },
+   "quality_flags": [],
+   "error": null
+  },
+  {
+   "run_id": "74c53d33ac87db38f0d44eb31a258a40",
+   "prompt_id": "long",
+   "repeat_index": 2,
+   "timestamp": "2026-11-06T16:52:53.942Z",
+   "status": "ok",
+   "measurements": {
+    "ttft_ms": 156.597,
+    "decode_tps": 45.848,
+    "cpu_percent_normalized": 20.464,
+    "peak_rss_mib": 1342.641
+   },
+   "sources": {
+    "ttft_ms": "client_monotonic_first_nonempty_text",
+    "decode_tps": "ollama.eval_count/eval_duration_ns",
+    "cpu_percent_normalized": "psutil.process_cpu_times/logical_cores",
+    "peak_rss_mib": "psutil.sum_runtime_process_rss",
+    "output_tokens": 80,
+    "decode_duration_s": 1.744888,
+    "sample_interval_s": 0.1,
+    "process_count": 2,
+    "process_attribution": "endpoint_owner_and_children",
+    "cache_policy": "unique_prefix_per_run_cache_not_guaranteed_disabled",
+    "prompt_hash": "2b424f564fee0a0b68756cda8fca2cac6ccba1fd7dc55be1642ba0598434ac37"
+   },
+   "quality_flags": [],
+   "error": null
+  },
+  {
+   "run_id": "763afd59e2ec4c815b47d9d799fa1c3e",
+   "prompt_id": "long",
+   "repeat_index": 3,
+   "timestamp": "2026-11-06T16:52:55.916Z",
+   "status": "ok",
+   "measurements": {
+    "ttft_ms": 145.735,
+    "decode_tps": 45.107,
+    "cpu_percent_normalized": 12.545,
+    "peak_rss_mib": 1350.516
+   },
+   "sources": {
+    "ttft_ms": "client_monotonic_first_nonempty_text",
+    "decode_tps": "ollama.eval_count/eval_duration_ns",
+    "cpu_percent_normalized": "psutil.process_cpu_times/logical_cores",
+    "peak_rss_mib": "psutil.sum_runtime_process_rss",
+    "output_tokens": 79,
+    "decode_duration_s": 1.751381,
+    "sample_interval_s": 0.1,
+    "process_count": 2,
+    "process_attribution": "endpoint_owner_and_children",
+    "cache_policy": "unique_prefix_per_run_cache_not_guaranteed_disabled",
+    "prompt_hash": "b6d8d502a6561cf2d55320a91d844da499a27c143b16a39aaa4b7f69907d40d4"
+   },
+   "quality_flags": [],
+   "error": null
+  }
+ ],
+ "summary": {
+  "runs": 9,
+  "valid_runs": 9,
+  "partial_runs": 0,
+  "failed_runs": 0,
+  "median_ttft_ms": 67.137,
+  "ttft_ms_range": [
+   48.728,
+   156.597
+  ],
+  "ttft_ms_valid_count": 9,
+  "median_tps": 47.034,
+  "decode_tps_range": [
+   45.065,
+   51.664
+  ],
+  "decode_tps_valid_count": 9,
+  "median_cpu_percent": 14.513,
+  "cpu_percent_normalized_range": [
+   11.139,
+   20.464
+  ],
+  "cpu_percent_normalized_valid_count": 9,
+  "peak_ram_mb": 1350.516,
+  "peak_rss_mib_range": [
+   1311.359,
+   1350.516
+  ],
+  "peak_rss_mib_valid_count": 9,
+  "per_prompt": {
+   "short": {
+    "runs": 3,
+    "valid_runs": 3,
+    "partial_runs": 0,
+    "failed_runs": 0,
+    "median_ttft_ms": 66.387,
+    "ttft_ms_range": [
+     48.728,
+     72.533
+    ],
+    "ttft_ms_valid_count": 3,
+    "median_tps": 51.506,
+    "decode_tps_range": [
+     47.388,
+     51.664
+    ],
+    "decode_tps_valid_count": 3,
+    "median_cpu_percent": 11.351,
+    "cpu_percent_normalized_range": [
+     11.139,
+     11.501
+    ],
+    "cpu_percent_normalized_valid_count": 3,
+    "peak_ram_mb": 1314.953,
+    "peak_rss_mib_range": [
+     1311.359,
+     1314.953
+    ],
+    "peak_rss_mib_valid_count": 3
+   },
+   "medium": {
+    "runs": 3,
+    "valid_runs": 3,
+    "partial_runs": 0,
+    "failed_runs": 0,
+    "median_ttft_ms": 57.491,
+    "ttft_ms_range": [
+     53.643,
+     67.137
+    ],
+    "ttft_ms_valid_count": 3,
+    "median_tps": 47.034,
+    "decode_tps_range": [
+     46.078,
+     47.242
+    ],
+    "decode_tps_valid_count": 3,
+    "median_cpu_percent": 17.275,
+    "cpu_percent_normalized_range": [
+     14.513,
+     20.283
+    ],
+    "cpu_percent_normalized_valid_count": 3,
+    "peak_ram_mb": 1327.484,
+    "peak_rss_mib_range": [
+     1318.547,
+     1327.484
+    ],
+    "peak_rss_mib_valid_count": 3
+   },
+   "long": {
+    "runs": 3,
+    "valid_runs": 3,
+    "partial_runs": 0,
+    "failed_runs": 0,
+    "median_ttft_ms": 145.735,
+    "ttft_ms_range": [
+     140.248,
+     156.597
+    ],
+    "ttft_ms_valid_count": 3,
+    "median_tps": 45.107,
+    "decode_tps_range": [
+     45.065,
+     45.848
+    ],
+    "decode_tps_valid_count": 3,
+    "median_cpu_percent": 16.087,
+    "cpu_percent_normalized_range": [
+     12.545,
+     20.464
+    ],
+    "cpu_percent_normalized_valid_count": 3,
+    "peak_ram_mb": 1350.516,
+    "peak_rss_mib_range": [
+     1334.688,
+     1350.516
+    ],
+    "peak_rss_mib_valid_count": 3
+   }
+  },
+  "method": "Per-prompt median and range of non-error available values; peak_ram_mb is sampled peak RSS in MiB. Decode TPS uses runtime token count / runtime decode seconds; TTFT is client-observed first-text latency. Null means unavailable, never zero.",
+  "model": "qwen2.5:1.5b",
+  "runtime": "ollama",
+  "machine_label": "device-193ad9b6",
+  "warmup_round_trip_s": 0.0931,
+  "note": "Measured local session. CPU excludes GPU work; sampled RSS may include shared pages.",
+  "quality_flags": []
+ }
+}

@@ -24,12 +24,24 @@
   let toastTimer;
   function toast(message) { $('toast').textContent = message; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').hidden = true; }, 4500); }
 
+  // Old links still work: Models and Apps are now the Catalog, and measuring is one page.
+  const ALIAS = { models: 'catalog', apps: 'catalog', predict: 'measure' };
+  const PARTS = { measure: ['predict', 'results'] };
+  const TITLES = { learn: 'Learn', preview: 'Demo', catalog: 'Catalog', use: 'Use it', measure: 'Measure', results: 'Results', mylab: 'My lab' };
   function route() {
-    const candidate = location.hash.slice(1);
-    const view = ['learn', 'deploy', 'models', 'use', 'predict', 'results', 'apps', 'mylab'].includes(candidate) ? candidate : 'deploy';
-    document.querySelectorAll('.view').forEach(node => { node.hidden = node.id !== 'view-' + view; });
+    const lab = document.documentElement.dataset.mode === 'lab';
+    const asked = location.hash.slice(1);
+    let view = ALIAS[asked] || asked;
+    if (view !== 'deploy' && !TITLES[view]) view = 'deploy';
+    // Each version only has its own pages: the website can't measure, and the lab needs no demo.
+    if (lab && view === 'results') view = 'measure';
+    if (lab && view === 'preview') view = 'deploy';
+    if (!lab && view === 'measure') view = 'results';
+    if (!lab && (view === 'use' || view === 'mylab')) view = 'deploy';
+    const parts = PARTS[view] || [view];
+    document.querySelectorAll('.view').forEach(node => { node.hidden = !parts.includes(node.id.slice(5)); });
     document.querySelectorAll('[data-view]').forEach(node => { if (node.dataset.view === view) node.setAttribute('aria-current', 'page'); else node.removeAttribute('aria-current'); });
-    document.title = ['Local AI Lab', { learn: 'Learn', deploy: document.documentElement.dataset.mode === 'lab' ? 'Set up' : 'Start', models: 'Models', use: 'Use it', predict: 'Predict & Run', results: 'Results', apps: 'Apps', mylab: 'My lab' }[view]].join(' · ');
+    document.title = ['Local AI Lab', view === 'deploy' ? (lab ? 'Set up' : 'Home') : TITLES[view]].join(' · ');
   }
   window.addEventListener('hashchange', () => { route(); $('main').focus({ preventScroll: true }); window.scrollTo(0, 0); });
 

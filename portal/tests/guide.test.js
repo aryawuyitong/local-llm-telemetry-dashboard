@@ -2,6 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 require('../lab-data.js');
+require('../measured-data.js');
 const G = require('../guide.js');
 const catalog = globalThis.LocalLabCatalog;
 const model = tag => catalog.models.find(m => m.ollama_tag === tag);
