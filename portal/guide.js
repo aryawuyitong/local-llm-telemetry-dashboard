@@ -77,6 +77,8 @@
       run ? cell('Speed', `${run.tps} tok/s`, 'measured on ' + run.device) : cell('Speed', 'Not yet', 'you measure it'));
     const acts = el('div', undefined, 'lab-acts');
     const download = el('a', `Download for ${mac ? 'Mac' : 'Windows'}`, 'button primary'); download.href = DOWNLOAD_URL; download.rel = 'noopener noreferrer';
+    // The download starts, then the start guide takes over, so nobody is left alone with a ZIP file.
+    if (mac) download.addEventListener('click', () => setTimeout(() => { location.hash = 'start'; }, 700));
     acts.append(download, el('span', 'No Python? The launcher offers to add a private copy (about 25 MB).', 'lab-quiet'));
     box.append(el('p', fit.verdict === 'yes' ? 'Yes.' : 'Yes, if you close some apps.', 'lab-verdict ' + fit.verdict), sub, cells, acts);
   }

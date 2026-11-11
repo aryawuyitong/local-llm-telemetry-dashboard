@@ -21,6 +21,7 @@
   <script src="guide.js" defer></script>
   <script src="catalog-data.js" defer></script>
   <script src="catalog.js" defer></script>
+  <script src="start.js" defer></script>
   <script src="preview-data.js" defer></script>
   <script src="preview.js" defer></script>
   <script src="learn.js" defer></script>
@@ -77,14 +78,13 @@
           <div class="lab-answer" id="answer" aria-live="polite"><p class="lab-ghost">Pick one to see<br>what you can run.</p></div>
         </div>
         <p class="lab-start"><a class="button secondary" href="#preview">Try the one-minute demo first <span aria-hidden="true">→</span></a></p>
-        <p class="lab-start">Already downloaded it? Double-click <b>Start Lab Helper</b> in its <b>agent</b> folder.</p>
+        <p class="lab-start">Already downloaded it? <a href="#start">The start guide</a> shows how to open it.</p>
       </div>
 
 
       <div class="lab-next"><h2>After you download it</h2>
-        <ol><li>Unzip the folder, open <b>agent</b>, and double-click <b>Start Lab Helper</b>. It checks for Python first. If your laptop has none, it asks before adding a private copy to the lab folder.</li>
-          <li>This same website opens from your laptop, as the <b>lab version</b>, with a Set up page that walks you through Ollama and your first model.</li>
-          <li>Read each step's card, then approve it or type it yourself. After that you can talk to your model, compare two, and see what changed.</li></ol></div>
+        <p>The start guide walks you from the download to the lab opening, one screen at a time. It shows what you should see at each step, and what to do if you see something else.</p>
+        <p><a class="button primary" href="#start">Open the start guide <span aria-hidden="true">→</span></a></p></div>
 
       <div class="lab-trust">
         <div><div class="lab-figure lab-trust-figure" data-figure="drawer" data-label="A cabinet of drawers"></div><h3>It adds</h3><p>The lab folder, the model you choose, and Ollama, which you install yourself.</p></div>
@@ -99,10 +99,10 @@
       </div>
 
       <div class="lab-more">
-        <details><summary>My laptop blocked Start Lab Helper</summary>
+        <details><summary>My laptop blocked the Start file</summary>
           <p>Laptops warn about downloaded files from developers they don't recognize. Don't turn off any security setting. Start it from a terminal instead, which changes no settings. It's a plain text file, so you can read it first.</p>
-          <p><b>Mac:</b> open Terminal, type <code>bash</code> and a space, drag <b>Start Lab Helper.command</b> into the window, and press Return.</p>
-          <p><b>Windows:</b> open Command Prompt, drag <b>Start Lab Helper.bat</b> into the window, and press Enter.</p>
+          <p><b>Mac:</b> follow <a href="#start">the start guide</a>, which gives you one line to paste into Terminal.</p>
+          <p><b>Windows:</b> open Command Prompt, drag <b>Start Lab Helper.bat</b> from the <b>agent</b> folder into the window, and press Enter.</p>
           <p class="fine-print">If your school or company manages this laptop and it still won't run, stop and ask them.</p>
         </details>
         <details><summary>I've done this before: show the commands</summary>
@@ -120,6 +120,12 @@
         <div id="preview-body"></div></div>
     </section>
 
+
+    <section id="view-start" class="view public-only" hidden aria-labelledby="start-title">
+      <div class="lab-app start"><div class="page-intro"><p class="eyebrow">START GUIDE · MAC</p><h1 id="start-title">From download <em>to running.</em></h1><p>Five short steps. Each one shows what you should see, so you always know whether it worked.</p></div>
+        <p class="note warn" id="start-windows" hidden><strong>This guide is for Mac.</strong> On Windows, unzip the download, open the <b>agent</b> folder and double-click <b>Start Lab Helper.bat</b>. A Windows guide isn't written yet.</p>
+        <div id="start-body"></div></div>
+    </section>
 
     <section id="view-catalog" class="view" hidden aria-labelledby="catalog-title">
       <div class="lab-app catalog"><div class="page-intro"><p class="eyebrow">CATALOG</p><h1 id="catalog-title">Everything the lab <em>can set up.</em></h1><p>Read every step, its exact command, what it costs and how to undo it, before you decide to trust it.</p></div>

@@ -75,7 +75,7 @@ if [ ! -x "$LAB_PYTHON" ]; then
   BASE="$(find_python)" || { download_python; BASE="./.python/python/bin/python3"; }
   echo "First run: creating the lab's private Python environment in this folder (about 20 seconds)."
   echo "This only adds a .venv folder here. Delete the folder to undo it."
-  "$BASE" -m venv .venv && "$LAB_PYTHON" -m pip install --quiet -r requirements.txt || stop "Setup failed. Send the text in this window to the team."
+  "$BASE" -m venv .venv && "$LAB_PYTHON" -m pip install --quiet --disable-pip-version-check -r requirements.txt || stop "Setup failed. Send the text in this window to the team."
 fi
 "$LAB_PYTHON" -c "import sys, psutil; assert sys.version_info >= (3, 11)" >/dev/null 2>&1 || stop "This folder's .venv is missing Python 3.11+ or a dependency. Delete the .venv folder and double-click Start Lab Helper again."
 exec "$LAB_PYTHON" -m telemetry_agent.helper

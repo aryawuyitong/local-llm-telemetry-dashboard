@@ -350,3 +350,47 @@ html[data-mode=lab] .results-intro { display: none; }
 #real-results .num { text-align: right; font-variant-numeric: tabular-nums; }
 #real-results .cat-share { margin-top: 10px; }
 #real-results .cat-share summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+
+/* Start guide: one step at a time, with a drawing of what the student should see */
+.start .start-dots { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0 0 14px; }
+.start .start-dots button { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 13.5px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); color: var(--muted); cursor: pointer; }
+.start .start-dots b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--surface-2); font-size: 12px; }
+.start .start-dots .on { border-color: var(--accent); color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+.start .start-dots .done b { background: var(--accent); color: var(--accent-ink); }
+.start .start-step { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.start .start-step h2, .start .start-done h2 { margin: 2px 0 8px; }
+.start .start-line { display: block; padding: 9px 11px; margin-bottom: 8px; }
+.start .start-other { grid-column: 1 / -1; border-top: 1px solid var(--border); padding-top: 12px; }
+.start .start-other details { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.start .start-other summary { cursor: pointer; font-weight: 600; }
+.start .start-other textarea { width: 100%; margin: 6px 0; font: inherit; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+.start .start-done { border-color: var(--accent); }
+.start .btn { text-decoration: none; }
+.start .mock { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); font-size: 13.5px; }
+.start .mock-bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: var(--surface-2); color: var(--muted); font-size: 12.5px; }
+.start .mock-bar i { width: 10px; height: 10px; border-radius: 50%; background: #c9cfc4; }
+.start .mock-bar span { margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.start .mock-row { display: flex; align-items: center; gap: 9px; padding: 7px 12px; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.start .mock-row.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.start .mock-row small { margin-left: auto; padding-left: 8px; font-weight: 400; white-space: nowrap; }
+.start .mock-icon { flex: none; width: 15px; height: 13px; border-radius: 3px; background: #a9b5ab; }
+.start .mock-icon.file { width: 12px; height: 15px; background: none; border: 1.5px solid #8b978f; }
+.start .mock-icon.zip { width: 12px; height: 15px; background: repeating-linear-gradient(#8b978f 0 2px, transparent 2px 4px); border: 1.5px solid #8b978f; }
+.start .mock.dark { background: #1b2623; border-color: #1b2623; }
+.start .mock.dark .mock-bar { background: #2a3733; color: #b9c5bf; }
+.start .mock.dark .mock-bar i { background: #50605a; }
+.start .mock-term { margin: 0; padding: 12px; color: #dfe7e2; font: 12.5px/1.55 "JetBrains Mono", ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.start .mock-term .dim { color: #8fa39b; }
+.start .mock-term .hi { color: #a6dbc1; }
+.start .mock-caret { display: inline-block; width: 7px; height: 14px; margin-left: 2px; vertical-align: -2px; background: #dfe7e2; }
+.start .mock-nav { display: flex; flex-wrap: wrap; gap: 12px; padding: 9px 12px; color: var(--muted); border-top: 1px solid var(--border); }
+.start .mock-nav b { color: var(--text); border-bottom: 2px solid var(--accent); }
+.start .mock-strip { padding: 6px 12px; background: #e5eee4; color: #2f6b55; font-weight: 600; }
+.start .mock-page { padding: 18px 12px 22px; font-family: var(--display, serif); font-size: 24px; }
+.start .mock-page em { color: var(--accent); }
+.start .mock-dialog { max-width: 290px; margin: 10px 0; padding: 16px; text-align: left; }
+.start .mock-dialog p { margin: 6px 0 12px; font-size: 13px; }
+.start .mock-warn { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-bottom: 8px; border-radius: 8px; background: #e2b93b; color: #fff; font-weight: 700; }
+.start .mock-btn { display: block; padding: 7px; margin-top: 6px; border-radius: 8px; background: var(--surface-2); text-align: center; color: var(--muted); }
+.start .mock-btn.pick { outline: 2px solid var(--accent); color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+@media (max-width: 760px) { .start .start-step { grid-template-columns: 1fr; } .start .start-dots span { display: none; } }

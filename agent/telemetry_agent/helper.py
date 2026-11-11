@@ -1402,7 +1402,8 @@ def main(argv=None):
     url = f"http://127.0.0.1:{server.server_address[1]}/#t={token}"
     print("Local AI Lab helper is running on this laptop only.", flush=True)
     print("Keep this window open. Nothing changes on your laptop until you approve a step.", flush=True)
-    print("Windows has not yet been validated on a physical device.", flush=True)
+    if platform.system() == "Windows":
+        print("Windows has not yet been validated on a physical device.", flush=True)
     print(f"Open this private launch link (do not share its token):\n  {url}\n", flush=True)
     if not args.no_browser:
         threading.Timer(0.5, webbrowser.open, (url,)).start()

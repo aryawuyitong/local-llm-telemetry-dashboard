@@ -8,7 +8,7 @@ The repository includes a static learning portal, a local assistant with five cu
 
 There is **one website, in two modes**. The [public version](https://aryawuyitong.github.io/local-llm-telemetry-dashboard/) works immediately for lessons, quizzes, and synthetic examples. When you start the Lab Helper on your own computer, it serves the same site from your laptop with setup, downloads, the assistant, and your results working. For a real model run, use a standard user account and follow these steps:
 
-1. Install and open [Ollama](https://ollama.com/download) using its official instructions. The lab needs **Python 3.11 or newer**. If you double-click **Start Lab Helper** and your computer has none, the launcher shows what it would download (an official CPython 3.12 build from [python-build-standalone](https://github.com/astral-sh/python-build-standalone), about 25 MB on Mac and 45 MB on Windows, checked against its published SHA-256) and waits for you to press Return before it puts that copy in `agent/.python/`. Delete that folder to undo it. Installation from a completely unprepared computer is not yet a verified no-admin workflow. If your organization requires administrator approval or the OS blocks an executable, stop and use its supported process; do not disable protections.
+1. Install and open [Ollama](https://ollama.com/download) using its official instructions. The lab needs **Python 3.11 or newer**. On a Mac, the website's start guide walks you from the download to the lab opening: it starts **Start Lab on Mac.command**, at the top of the folder, from Terminal with one pasted line. If you start the lab and your computer has no suitable Python, the launcher shows what it would download (an official CPython 3.12 build from [python-build-standalone](https://github.com/astral-sh/python-build-standalone), about 25 MB on Mac and 45 MB on Windows, checked against its published SHA-256) and waits for you to press Return before it puts that copy in `agent/.python/`. Delete that folder to undo it. Installation from a completely unprepared computer is not yet a verified no-admin workflow. If your organization requires administrator approval or the OS blocks an executable, stop and use its supported process; do not disable protections.
 2. Download the [ZIP of `main`](https://github.com/aryawuyitong/local-llm-telemetry-dashboard/archive/refs/heads/main.zip) and extract it, or clone the repository. You may rename the extracted folder `local-ai-lab` and place it at `Desktop/i2ai/project/local-ai-lab`. If you already downloaded it, keep your folder. Open the folder containing `agent/` and `portal/` in VS Code, then choose **Terminal → New Terminal**.
 3. From that project-root terminal, enter `agent/`, create an isolated Python environment, and install its listed dependency:
 
@@ -69,6 +69,12 @@ A small model invents facts, so anything about this laptop is answered by code. 
 | The model | Everything else, such as explaining a general idea | The model, and the reply warns it can be wrong |
 
 Fixed patterns catch common wordings instantly. For other wordings about the lab, a model of 3B or more chooses a topic from a fixed list, and code still writes the answer. A student can press **Not what I asked** to send the question straight to the model. See `agent/telemetry_agent/answers.py`.
+
+## Starting the lab on a Mac
+
+macOS blocks a double-click on the launcher, because the lab isn't signed. The website's **start guide** (Home, then "Open the start guide") handles this without changing any security setting. It has five steps, each with a drawing of what the student should see and an "I see something else" button with the fixes for that step.
+
+The guide gives one line to paste into Terminal. It runs `Start Lab on Mac.command`, a five-line file at the top of the folder that opens the real launcher in `agent/`. The line only starts the file that was already downloaded. A Windows guide isn't written yet.
 
 ## The pages
 

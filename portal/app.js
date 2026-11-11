@@ -27,7 +27,7 @@
   // Old links still work: Models and Apps are now the Catalog, and measuring is one page.
   const ALIAS = { models: 'catalog', apps: 'catalog', predict: 'measure' };
   const PARTS = { measure: ['predict', 'results'] };
-  const TITLES = { learn: 'Learn', preview: 'Demo', catalog: 'Catalog', use: 'Use it', measure: 'Measure', results: 'Results', mylab: 'My lab' };
+  const TITLES = { learn: 'Learn', preview: 'Demo', start: 'Start guide', catalog: 'Catalog', use: 'Use it', measure: 'Measure', results: 'Results', mylab: 'My lab' };
   function route() {
     const lab = document.documentElement.dataset.mode === 'lab';
     const asked = location.hash.slice(1);
@@ -35,7 +35,7 @@
     if (view !== 'deploy' && !TITLES[view]) view = 'deploy';
     // Each version only has its own pages: the website can't measure, and the lab needs no demo.
     if (lab && view === 'results') view = 'measure';
-    if (lab && view === 'preview') view = 'deploy';
+    if (lab && (view === 'preview' || view === 'start')) view = 'deploy';
     if (!lab && view === 'measure') view = 'results';
     if (!lab && (view === 'use' || view === 'mylab')) view = 'deploy';
     const parts = PARTS[view] || [view];
