@@ -394,3 +394,19 @@ html[data-mode=lab] .results-intro { display: none; }
 .start .mock-btn { display: block; padding: 7px; margin-top: 6px; border-radius: 8px; background: var(--surface-2); text-align: center; color: var(--muted); }
 .start .mock-btn.pick { outline: 2px solid var(--accent); color: var(--accent); font-weight: 600; background: var(--accent-soft); }
 @media (max-width: 760px) { .start .start-step { grid-template-columns: 1fr; } .start .start-dots span { display: none; } }
+
+/* Start guide, step 3: the file being dragged from Finder into Terminal. */
+.start .start-todo { margin: 10px 0 14px; padding-left: 22px; }
+.start .start-todo li { margin: 6px 0; padding-left: 4px; font-weight: 600; }
+.start .start-shortcut { margin: 6px 0 10px; }
+.start .start-shortcut summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+.start .mock-drag { position: relative; display: grid; gap: 14px; }
+.start .mock-drag .mock-row { padding-top: 5px; padding-bottom: 5px; }
+.start .drag-chip { position: absolute; z-index: 2; left: 18px; top: 103px; display: inline-flex; align-items: center; gap: 7px; padding: 4px 9px; border-radius: 7px;
+  background: var(--accent); color: #fff; font-size: 12.5px; font-weight: 600; box-shadow: 0 6px 16px rgba(0,0,0,.25); opacity: 0; animation: drag-chip 5s ease-in-out infinite; }
+.start .drag-chip .mock-icon.file { border-color: #fff; }
+.start .drag-path { color: #a6dbc1; opacity: 0; animation: drag-path 5s step-end infinite; }
+@keyframes drag-chip { 0%, 12% { opacity: 0; transform: translate(0, 0); } 18% { opacity: 1; transform: translate(0, 0); }
+  58% { opacity: 1; transform: translate(150px, 81px); } 64%, 100% { opacity: 0; transform: translate(150px, 81px); } }
+@keyframes drag-path { 0% { opacity: 0; } 62% { opacity: 1; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .start .drag-chip { display: none; } .start .drag-path { animation: none; opacity: 1; } }

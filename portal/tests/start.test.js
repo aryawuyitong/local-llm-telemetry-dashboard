@@ -57,3 +57,12 @@ test('the folder drawing lists every top-level item the download really has', ()
   const shipped = fs.readdirSync(root).filter(n => !n.startsWith('.') && !ignored.includes(n)).sort();
   assert.deepEqual(S.FOLDER.map(([n]) => n).sort(), shipped);
 });
+
+test('starting works without knowing the folder name: bash, a space, drag the file, Return', () => {
+  const start = S.STEPS.find(s => s.id === 'start');
+  assert.equal(start.mock, 'drag');
+  assert.equal(start.todo.length, 3);
+  assert.match(start.todo[0], /bash and then a space/);
+  assert.match(start.todo[1], /Drag Start Lab on Mac/);
+  assert.match(start.todo[2], /Return/);
+});
