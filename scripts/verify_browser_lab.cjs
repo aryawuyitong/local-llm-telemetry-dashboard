@@ -1,5 +1,5 @@
 // Run against the real static portal and pinned browser models.
-// npm install --no-save --package-lock=false playwright@1.51.1
+// npm install --no-save --package-lock=false playwright@1.61.0
 // npx playwright install chromium
 const assert = require('node:assert/strict');
 const http = require('node:http');
