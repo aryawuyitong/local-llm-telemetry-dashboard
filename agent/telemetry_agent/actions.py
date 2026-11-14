@@ -12,6 +12,7 @@ cards, log and undo for free.
 from __future__ import annotations
 
 import math
+import os
 import platform
 import shutil
 from dataclasses import dataclass, field
@@ -88,7 +89,9 @@ def ollama_app() -> str | None:
             if path.is_dir():
                 return str(path)
     if platform.system() == "Windows":
-        for base in (Path.home() / "AppData/Local/Programs/Ollama", Path("C:/Program Files/Ollama")):
+        local_app_data = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
+        programs = Path(os.environ.get("ProgramFiles") or "C:/Program Files")
+        for base in (local_app_data / "Programs/Ollama", programs / "Ollama"):
             exe = base / "ollama app.exe"
             if exe.is_file():
                 return str(exe)
@@ -163,6 +166,14 @@ def _benchmark(ctx):
             "undo": "Nothing changes on your laptop. Delete the results file in the lab folder if you don't want it.",
             "brief": "Three prompts, three repeats, saved locally.",
             "risk": _risk("Seconds to a few minutes", "One small results file", undo="Delete the results file")}
+
+
+def _benchmark_queue(_ctx):
+    return {"what": "Runs the same three prompts on each selected model, with one warm-up per model.",
+            "why": "Measuring one model at a time lets us compare speed and resource use on this laptop.",
+            "does": "Releases selected models from working memory before and after measurement. Model files stay on disk.",
+            "undo": "Delete the local results files to remove the measurements.",
+            "risk": _risk("A few minutes, depending on the models and repeats", "One small file per model", undo="Delete the results files")}
 
 
 def _remove(ctx):
@@ -251,6 +262,9 @@ REGISTRY: dict[str, Action] = {a.id: a for a in [
     Action("benchmark", lambda c: f"Measure {c['name']}", args=frozenset({"model", "repeats", "guess_tps", "guess_ram_gb"}),
            run="_do_benchmark", how="api", describe=_benchmark,
            log=lambda a, r, done: f"Measured {a.get('model')}" + (f": {r.get('median_tps')} tokens/s, peak {round(r.get('peak_ram_mb') or 0)} MiB." if done else ".")),
+    Action("benchmark_queue", lambda c: "Measure selected models", args=frozenset({"models", "repeats", "guess_tps", "guess_ram_gb"}),
+           run="_do_benchmark_queue", how="api", describe=_benchmark_queue,
+           log=lambda a, r, done: "Measured a queue of selected models."),
     Action("remove_model", lambda c: f"Remove {c['name']}", args=frozenset({"model"}), run="_do_remove_model", how="api", describe=_remove),
     # The second provider. Same card, log and undo; the command shown is the command run.
     Action("install_app", lambda c: f"Install {c['name']}", args=frozenset({"app"}), run="_do_install_app", describe=_install_app),

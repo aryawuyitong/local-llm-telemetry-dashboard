@@ -1,62 +1,36 @@
 # Local AI Lab
 
-Learn how a small language model runs on your own laptop: understand the concepts, set it up one visible step at a time, predict its behavior, and interpret repeatable measurements. This is an educational prototype built on the team's original local-agent demo.
+Local AI Lab helps learners run small language models on their laptops and see how model size affects response time, speed, and resource use.
 
-The repository includes a static learning portal, a local assistant with five custom tools plus one that only proposes an approval card, an Ollama telemetry collector, and evaluation materials. Model inference stays on loopback. The portal processes imported files in browser memory and has no upload service, account, analytics, or external JavaScript dependencies.
+## Start with the website
 
-## Start here
+Open [Local AI Lab](https://aryawuyitong.github.io/local-llm-telemetry-dashboard/). Once this revision is deployed, **Browser lab** runs a model inside a compatible browser on Windows or macOS. Select a model and click **Run benchmark**. The smaller SmolLM2 model is selected by default. Choose both models to run the same prompts on each and compare preparation time, first visible text, and tokens per second.
 
-There is **one website, in two modes**. The [public version](https://aryawuyitong.github.io/local-llm-telemetry-dashboard/) works immediately for lessons, quizzes, and synthetic examples. When you start the Lab Helper on your own computer, it serves the same site from your laptop with setup, downloads, the assistant, and your results working. For a real model run, use a standard user account and follow these steps:
+**Quick** runs one timed prompt after warm-up. **Standard** runs three prompt lengths, each repeated three times. Each run batch uses one backend. Automatic mode uses WebGPU with shader-f16 support or CPU WebAssembly. To retry after a GPU initialization error, select **CPU** and run again.
 
-1. Install and open [Ollama](https://ollama.com/download) using its official instructions. The lab needs **Python 3.11 or newer**. On a Mac, the website's start guide walks you from the download to the lab opening: it starts **Start Lab on Mac.command**, at the top of the folder, from Terminal: type `bash` and a space, drag the file into the window, and press Return. If you start the lab and your computer has no suitable Python, the launcher shows what it would download (an official CPython 3.12 build from [python-build-standalone](https://github.com/astral-sh/python-build-standalone), about 25 MB on Mac and 45 MB on Windows, checked against its published SHA-256) and waits for you to press Return before it puts that copy in `agent/.python/`. Delete that folder to undo it. Installation from a completely unprepared computer is not yet a verified no-admin workflow. If your organization requires administrator approval or the OS blocks an executable, stop and use its supported process; do not disable protections.
-2. Download the [ZIP of `main`](https://github.com/aryawuyitong/local-llm-telemetry-dashboard/archive/refs/heads/main.zip) and extract it, or clone the repository. You may rename the extracted folder `local-ai-lab` and place it at `Desktop/i2ai/project/local-ai-lab`. If you already downloaded it, keep your folder. Open the folder containing `agent/` and `portal/` in VS Code, then choose **Terminal → New Terminal**.
-3. From that project-root terminal, enter `agent/`, create an isolated Python environment, and install its listed dependency:
+- **Recorded demo** opens immediately with recorded results. It requires no model files.
+- **Browser lab** requires no source checkout, Python, or Ollama. The first use retrieves model weights and runtime files. SmolLM2 135M weights are approximately 118–182 MB, depending on backend and quantization. The two models together use approximately 391–570 MB in weights, plus runtime and tokenizer assets. The browser can reuse cached files when its storage policy permits. Browser results report backend, preparation time, first visible text, and decode speed. The browser results export has its own format.
+- **Desktop lab** uses Ollama for native inference and measures CPU and RAM for Ollama and its child processes. It displays Ollama-reported GPU memory after warm-up when available. GPU utilization percentage is unavailable. The release workflow builds Mac and Windows applications that bundle the helper. See [desktop release instructions](docs/desktop-release.md) for build, signing and device validation.
 
-macOS:
+Browser benchmark prompts and model output are processed on the laptop. The browser loads the pinned runtime from jsDelivr and models from Hugging Face. A live local model needs its weights available on the device. A recorded demo works when model downloads are impractical.
 
-```sh
-cd agent
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-AGENT_MODEL=qwen2.5:1.5b .venv/bin/python -m telemetry_agent.helper
-```
+## Measure installed models with the desktop lab
 
-Windows PowerShell:
+1. Open the desktop Lab Helper and start Ollama. The lab detects supported model tags already stored in Ollama.
+2. Use **Catalog** to add any approved model that you want to test. Review and approve its download. Existing compatible model files are reused.
+3. In **Measure**, select one to three installed models. Choose **Quick** for three timed prompts per model or **Full** for nine.
+4. Approve the benchmark. The lab measures the models one at a time and releases their working memory between measurements. Each model stays installed and has a separate local result file.
+5. Review side-by-side results and recent runs in **Measure**. Use the JSON export to share desktop sessions, or open several saved sessions in the public **Results** page to compare. Match settings and prompt counts before comparing.
 
-```powershell
-cd agent
-py -3 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-$env:AGENT_MODEL = 'qwen2.5:1.5b'
-.\.venv\Scripts\python.exe -m telemetry_agent.helper
-```
+## Run the website from a developer checkout
 
-4. Keep the terminal open. The helper normally opens its local browser page automatically; if it does not, open the private `http://127.0.0.1:.../#t=...` link printed in the terminal. Do not share that link. The helper works **before a model exists**. Installing Ollama stays with you, on its official page. Nothing else runs until you approve its card.
-5. In the helper, check hardware, choose a goal, and review the model recommendation and project disk budget. Each step shows its exact command. Approve the card and the helper runs it, or choose **I'll type it myself**, run the command in a second terminal, and let the helper check. For example, `llama3.2:1b` needs `ollama pull llama3.2:1b`; `llama3.2:latest` is a different tag. Tags are mutable: verify the publisher, applicable license, reported digest, actual download size, and available memory. No model weights are included here.
-6. After downloading, approve the check and **Say hello** steps. If the check reports a problem, follow its specific message; do not bypass the resource check. Once you get one local reply, make a speed and memory guess in **Predict & Run**, then approve **Measure**.
-7. Open **Results** in the lab. Your latest anonymous session appears in the charts automatically and stays on your laptop. Use **Download JSON** to keep or share a copy, and **Import JSON** on the public site to view it there. Do not import raw logs or personal records.
-
-To compare another model, open the helper's **Predict & Run** view and choose any already installed approved model from its Model menu. Each exact model tag needs to be downloaded only once. For a new tag, set it up from its card on **Models**. The benchmark can select a different installed model without restarting the helper; `AGENT_MODEL` controls which model powers the assistant.
-
-To compare two models in the public Results charts, benchmark each model locally under the same settings. Open **Import JSON** and select both saved session files from `agent/results/` in one selection. Chart rows identify the model. Compare the session conditions and data quality flags before interpreting the medians. This is a speed and resource comparison; benchmark responses are not recorded, so the charts cannot score answer quality. The Results page remains empty until you import measured data or explicitly choose labeled synthetic examples.
-
-The `.command`/`.bat` launchers are optional conveniences after reviewing them. Use the explicit interpreter commands above when activation scripts are blocked; no execution-policy change is needed. The public website and private helper stay separate; closing Ollama or the helper terminal ends local inference.
-
-If an old helper tab says **Failed to fetch** after you download a model, check the terminal where the helper was running. If it says **Stopped.**, restart the helper from `agent/` and open the new private link printed in that terminal; the old tab has an expired session token. Pulling a model in a second terminal does not restart the helper. Model files and completed benchmark JSON files remain on disk.
-
-## Open the learning website
-
-Visit the public [Local AI Lab website](https://aryawuyitong.github.io/local-llm-telemetry-dashboard/) to use the lessons, the demo, synthetic examples, and local JSON import. GitHub Pages publishes the static `portal/` directory when it changes on `main`. No Python or model is needed for these browser features.
-
-To run the same website locally instead, from the repository root:
+From the project root:
 
 ```sh
 python3 -m http.server 4173 --bind 127.0.0.1 --directory portal
 ```
 
-On Windows replace `python3` with `py -3`. Open `http://127.0.0.1:4173`. The four views are **Learn → Deploy → Predict & Run → Results**. Try the clearly labeled synthetic examples to explore charts before a real experiment. Example numbers are invented and are not project evidence.
-
-The public website never connects to localhost APIs or starts inference. The working lab is the same site served by the helper from your laptop, so it needs no cross-site access; manual JSON export/import remains available for the public site. Do not paste the helper's private session URL or token into the public website.
+Open `http://127.0.0.1:4173/#browser`. On Windows, use `py -3` in place of `python3`. GitHub Pages publishes the static `portal/` directory when changes land on `main`. Native development steps are below.
 
 ## How the assistant answers
 
@@ -70,24 +44,18 @@ A small model invents facts, so anything about this laptop is answered by code. 
 
 Fixed patterns catch common wordings instantly. For other wordings about the lab, a model of 3B or more chooses a topic from a fixed list, and code still writes the answer. A student can press **Not what I asked** to send the question straight to the model. See `agent/telemetry_agent/answers.py`.
 
-## Starting the lab on a Mac
-
-macOS blocks a double-click on the launcher, because the lab isn't signed. The website's **start guide** (Home, then "Open the start guide") handles this without changing any security setting. It has five steps, each with a drawing of what the student should see and an "I see something else" button with the fixes for that step.
-
-The guide has students type `bash` and a space in Terminal, drag in `Start Lab on Mac.command`, and press Return. Dragging works whatever the folder is called and wherever it is; a paste-in line for the usual Downloads location is offered as a shortcut. That file is five lines at the top of the folder and only opens the real launcher in `agent/`. Both ways start only the file that was already downloaded. A Windows guide isn't written yet.
-
 ## The pages
 
 The two versions have different menus, and a strip under the header says which one you're in.
 
 | Website version | Lab version |
 |---|---|
-| **Home**: what your laptop can run, and the download | **Set up**: the guided steps for your first model |
+| **Home**: choose how to start | **Set up**: the guided steps for your first model |
+| **Browser lab**: run a small model with WebGPU or CPU | **Measure**: benchmark one to three installed models |
 | **Demo**: click through the lab with nothing installed | **Catalog**: the same catalog, with a button that sets things up |
 | **Catalog**: every setup, model and app, with each command, cost and undo | **Use it**: talk to a model, and compare two |
-| **Learn**: four hands-on tools and a glossary | **Measure**: guess, measure and read the charts on one page |
+| **Learn**: four hands-on tools and a glossary | **Learn**: the same tools |
 | **Results**: what real laptops measured | **My lab**: health check, receipt, help report and log |
-| | **Learn**: the same tools |
 
 Old links to Models, Apps and Predict & Run still work and open the new pages.
 
@@ -173,9 +141,9 @@ Node20+ is required only for front-end tests, not to use the portal. CI runs Pyt
 
 The original agent demo and repository history are preserved. No client name, private scope document, participant data, model weights, or local runtime binaries are published here. Dependencies and model licenses remain with their respective authors. This repository does not grant additional model rights.
 
-## Do it all by hand (the full 7 steps)
+## Run the native helper from source for development
 
-The website's **Start** page walks you through setup with the Lab Helper. If you would rather run every step yourself, here is the whole route. Use a normal user account. If any step asks for an administrator password or to turn off a security feature, stop and use your device's approved process; do not bypass its protections.
+These commands are for contributors working in a source checkout. Use a regular user account.
 
 ### 1. Install and open Ollama; check Python
 
@@ -188,9 +156,7 @@ Check Ollama's current system requirements on its official page before installin
 
 ### 2. Download the project and open its folder
 
-Download the [ZIP of the main branch](https://github.com/aryawuyitong/local-llm-telemetry-dashboard/archive/refs/heads/main.zip) and extract it. You may rename the extracted folder `local-ai-lab`; for example, `Desktop/i2ai/project/local-ai-lab` is fine. Open that folder in VS Code, then choose **Terminal → New Terminal**. The folder should contain `agent/` and `portal/`. If it does not, open the inner project folder.
-
-Already downloaded it? Keep your existing folder and continue with step 3. You do not need to download it again.
+Open a checkout containing `agent/` and `portal/` in your terminal.
 
 ### 3. Prepare the Lab Helper
 
@@ -239,7 +205,7 @@ If that terminal later says **Stopped.**, restart the helper and open its new pr
 
 In the **local helper**, choose **Run this check**, select a goal, and review the suggested model. On the download step, choose **Approve and run**, or choose **I'll type it myself**, run the exact command shown in a **second terminal**, and wait for `success`. For example, if you selected `qwen2.5:1.5b`, run `ollama pull qwen2.5:1.5b`. Then click **I ran it; check my work**.
 
-**Switching models?** An exact tag only needs downloading once. For a model already installed, go straight to the helper's **Predict & Run** view and choose it from the Model menu. A new model still needs its one-time download and resource checks.
+**Switching models?** An exact tag only needs downloading once. For a model already installed, go straight to the helper's **Measure** page and select it. A new model still needs its one-time download and resource checks.
 
 **The download is only the first check.** In the helper, continue through **Check that everything is in place** and **Say hello to it**. You are ready for the experiment when the helper verifies the installation and shows one local reply. If verification reports an unverified installation footprint, read its specific message and check the project folder, Python environment, Ollama runtime and model location. Do not bypass the resource check.
 
@@ -249,8 +215,8 @@ Before moving on, confirm: the exact model is installed, verification passed, an
 
 ### 6. Predict, then run the experiment
 
-After the helper's first local reply, record your expected tokens per second and peak memory before the benchmark. Use **Predict & Run** in the local helper to run the fixed prompts.
+After the helper's first local reply, record your expected tokens per second and peak memory before the benchmark. Use **Measure** in the local helper to run the fixed prompts.
 
 ### 7. See your charts
 
-Open **Results** in the lab. Your latest measurement appears in the charts automatically and stays on your laptop. To keep a copy or share it, use **Download JSON**.
+Review the charts and previous sessions under **Measure**. To keep a copy, use **Download latest JSON** or open the results folder from **My lab**.

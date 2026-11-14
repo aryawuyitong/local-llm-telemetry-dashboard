@@ -1,0 +1,31 @@
+.browser-lab { --browser-accent: #286052; --browser-ink: #20332c; }
+.browser-workspace { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+.browser-panel { color: var(--browser-ink, #20332c); background: #f9fcf9; border: 1px solid #cbdad2; border-radius: 1rem; padding: clamp(1rem, 3vw, 1.65rem); }
+.browser-panel h2 { margin: 0 0 .85rem; }
+.browser-panel .button-row { align-items: center; }
+.browser-models { display: grid; gap: .55rem; }
+.browser-model { display: flex; align-items: center; gap: .85rem; padding: .85rem; border: 1px solid #ccdbd3; border-radius: .65rem; cursor: pointer; }
+.browser-model:has(input:checked) { background: #e7f3e9; border-color: #678674; }
+.browser-model input { width: 1.2rem; height: 1.2rem; accent-color: #286052; }
+.browser-model strong, .browser-model small { display: block; }
+.browser-options { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0 .6rem; }
+.browser-options label { display: flex; flex-direction: column; gap: .3rem; }
+.browser-options select { color: #20332c; background: #fff; border: 1px solid #9fb3a7; border-radius: .45rem; padding: .4rem .5rem; font: inherit; }
+#browser-status { margin-bottom: .45rem; }
+#browser-progress { width: 100%; accent-color: #286052; }
+#browser-errors { border-left: .25rem solid #9a492c; padding-left: .65rem; }
+.browser-explain dt { font-weight: 700; }
+.browser-explain dd { margin: .16rem 0 .8rem; }
+.browser-results { margin-top: 1.25rem; }
+.browser-metrics { display: grid; gap: .75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.browser-metric { border: 1px solid #ccdbd3; padding: .75rem; border-radius: .65rem; }
+.browser-metric h3 { margin: 0 0 .6rem; font-size: 1rem; }
+.browser-metric-row { display: grid; grid-template-columns: 1fr; gap: .2rem; margin-bottom: .65rem; }
+.browser-metric-row meter { width: 100%; height: 1rem; accent-color: #286052; }
+.browser-readout { padding: .6rem 0; border-bottom: 1px solid #ccdbd3; }
+.browser-readout summary { cursor: pointer; font-weight: 600; }
+.browser-run-detail { padding: .65rem .3rem; overflow-wrap: anywhere; white-space: pre-line; }
+#browser-export { margin-top: .65rem; }
+@media (max-width: 760px) {
+  .browser-workspace, .browser-metrics { grid-template-columns: 1fr; }
+}

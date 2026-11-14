@@ -31,6 +31,16 @@ html.assistant-open .assistant-toggle { display: none; }
 .lab-app .verdict { align-items: flex-start; }
 .lab-app .change.wrap { flex-wrap: wrap; }
 .lab-app .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.lab-app .measure-choice { margin: 0; padding: 0; border: 0; min-width: 0; }
+.lab-app .measure-choice legend { font-weight: 600; margin-bottom: 8px; }
+.lab-app .measure-models { display: flex; flex-wrap: wrap; gap: 8px; }
+.lab-app .measure-models label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+.lab-app .measurement-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr)); gap: 12px; }
+.lab-app .measurement-card h4 { margin: 0; }
+.lab-app .measurement-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 12px 0 0; }
+.lab-app .measurement-metrics dt { font-size: 12px; color: var(--muted); }
+.lab-app .measurement-metrics dd { margin: 0; font-variant-numeric: tabular-nums; }
+.lab-app .measurement-metrics meter { display: block; width: 100%; height: 8px; }
 .lab-app .location-slot { flex-basis: 100%; }
 .lab-app .location { margin-top: 10px; padding: 10px 12px; border-radius: 9px; background: var(--accent-soft); }
 .lab-app { --bg: #f7f7f1; --surface: #fffef8; --surface-2: #eaede3; --text: #192e2b; --muted: #4f5f5a;

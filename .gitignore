@@ -19,3 +19,4 @@ coverage/
 .pytest_cache/
 .openai/
 *.log
+.build/

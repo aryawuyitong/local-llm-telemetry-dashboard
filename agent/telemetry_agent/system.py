@@ -122,7 +122,8 @@ def installation_footprint(settings) -> dict:
     Runtime discovery and scan incompleteness are explicit; estimates are not
     silently promoted to a verified whole-installation budget.
     """
-    from .config import ROOT
+    from .actions import ollama_app
+    from .config import FROZEN, lab_install_roots
     binary = shutil.which("ollama" if settings.runtime == "ollama" else "llama-server")
     runtime = settings.runtime_install_dir
     distribution_expanded = False
@@ -148,15 +149,18 @@ def installation_footprint(settings) -> dict:
         candidates = [Path("/Applications/Ollama.app"), Path.home() / "Applications/Ollama.app"]
         if os.environ.get("LOCALAPPDATA"):
             candidates.append(Path(os.environ["LOCALAPPDATA"]) / "Programs/Ollama")
+        discovered = ollama_app()
+        if discovered and platform.system() == "Windows" and Path(discovered).name.lower() == "ollama app.exe":
+            candidates.append(Path(discovered).parent)
         runtime = next((p for p in candidates if p.exists()), None)
     # The project environment is part of this lab. A pre-existing base Python
     # distribution (for example a user's Anaconda installation) is not: it can
     # contain unrelated packages and make a bounded scan fail on a normal setup.
-    roots = [ROOT, Path(sys.prefix)]
+    roots = lab_install_roots()
     if runtime is not None:
         roots.append(runtime)
     excluded = [settings.models_dir.resolve(), settings.runtime_models_dir.resolve(), settings.results_dir.resolve()]
-    if Path(sys.prefix).resolve() != Path(sys.base_prefix).resolve():
+    if not FROZEN and Path(sys.prefix).resolve() != Path(sys.base_prefix).resolve():
         # A venv commonly symlinks its Python executable to the pre-existing
         # base interpreter. That known prerequisite is outside this project's
         # footprint; do not mistake the symlink for an unknown external file.

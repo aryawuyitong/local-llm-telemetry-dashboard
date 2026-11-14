@@ -102,8 +102,10 @@ class HTTPBodyBoundaryTests(unittest.TestCase):
             conn.close()
 
     def test_negative_duplicate_oversize_and_wrong_media_type_are_rejected(self):
-        for args in [(-1,), ("nonnumeric",), (helper.MAX_BODY + 1,), (2, b"{}", "text/plain"),
-                     (2, b"{}", "application/json", True)]:
+        # These headers must be rejected before any body is read. Sending body
+        # bytes races the server's close and can reset the connection on Windows.
+        for args in [(-1, b""), ("nonnumeric", b""), (helper.MAX_BODY + 1, b""), (2, b"", "text/plain"),
+                     (2, b"", "application/json", True)]:
             with self.subTest(args=args):
                 self.assertEqual(self.raw_post(*args), 400)
 

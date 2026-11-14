@@ -1,0 +1,68 @@
+name: Build the desktop Lab Helper
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing tag to package and stage as a new draft release. Leave empty for test artifacts.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: macos-arm64
+          - runner: macos-15-intel
+            target: macos-x64
+          - runner: windows-2025
+            target: windows-x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag != '' && format('refs/tags/{0}', inputs.release_tag) || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install packaging dependencies
+        run: python -m pip install -r agent/requirements.txt -r scripts/requirements-desktop.txt
+      - name: Build and smoke test the desktop app
+        run: python scripts/build_lab_app.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Local-AI-Lab-${{ matrix.target }}
+          path: .build/desktop/Local-AI-Lab-${{ matrix.target }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  draft:
+    name: Stage a draft release
+    if: inputs.release_tag != ''
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Create an unpublished candidate release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9][A-Za-z0-9._-]*$ ]] || { echo "Use an existing version tag such as v0.2.0."; exit 1; }
+          gh release create "$RELEASE_TAG" assets/Local-AI-Lab-*.zip --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --draft --title "Local AI Lab $RELEASE_TAG" \
+            --notes "Desktop release candidate. Complete platform signing and on-device validation before publication."

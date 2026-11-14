@@ -1,0 +1,28 @@
+name: Run a real model in the browser
+
+on:
+  pull_request:
+    paths:
+      - 'portal/browser-lab*'
+      - '.github/workflows/browser-smoke.yml'
+      - 'scripts/verify_browser_lab.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the browser test runner
+        run: |
+          npm install --no-save --package-lock=false playwright@1.61.0
+          npx playwright install --with-deps chromium
+      - name: Measure two models using CPU WebAssembly
+        run: node scripts/verify_browser_lab.cjs

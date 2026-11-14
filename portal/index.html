@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A local-first learning lab for deploying, measuring, and understanding a small language model on your laptop.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Local AI Lab</title>
   <meta property="og:title" content="Local AI Lab: run AI on your laptop">
   <meta property="og:description" content="See every step, approve each one, and find out what your own laptop can handle. Your questions stay on your computer.">
@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="home.css">
   <link rel="stylesheet" href="lab.css">
+  <link rel="stylesheet" href="browser-lab.css">
   <script src="data.js" defer></script>
   <script src="app.js" defer></script>
   <script src="lab-data.js" defer></script>
@@ -21,7 +22,7 @@
   <script src="guide.js" defer></script>
   <script src="catalog-data.js" defer></script>
   <script src="catalog.js" defer></script>
-  <script src="start.js" defer></script>
+  <script src="browser-lab.js" type="module"></script>
   <script src="preview-data.js" defer></script>
   <script src="preview.js" defer></script>
   <script src="learn.js" defer></script>
@@ -34,6 +35,7 @@
     <a class="brand" href="#deploy" aria-label="Local AI Lab home"><span class="brand-mark" aria-hidden="true">L<span>↗</span></span><span>LOCAL AI <b>LAB</b><small>AN EXPERIMENT IN UNDERSTANDING</small></span></a>
     <nav class="main-nav" aria-label="Lab sections">
       <a href="#deploy" data-view="deploy" aria-current="page"><span class="public-only">Home</span><span class="lab-only">Set up</span></a>
+      <a href="#browser" data-view="browser" class="public-only">Browser lab</a>
       <a href="#preview" data-view="preview" class="public-only">Demo</a>
       <a href="#catalog" data-view="catalog">Catalog</a>
       <a href="#use" data-view="use" class="lab-only">Use it</a>
@@ -46,11 +48,11 @@
     <span class="local-pill public-only"><i aria-hidden="true"></i> Local-first by design</span>
   <div id="prog" aria-hidden="true"></div></header>
   <div id="glow" aria-hidden="true"></div>
-  <p class="mode-strip public-only"><strong>Website version.</strong> Nothing here can touch your laptop. To run a model for real, <a href="#deploy">get the lab</a>.</p>
+  <p class="mode-strip public-only"><strong>Website.</strong> <a href="#browser">Run a small model in your browser</a> or use the desktop lab for process measurements.</p>
   <p class="mode-strip in-lab lab-only"><strong>Lab version, running on this laptop.</strong> You see every step first, and each one waits for your approval.</p>
 
   <main id="main" tabindex="-1">
-    <div id="connection-lost" class="notice lab-only" hidden role="alert"><strong>Cannot reach the Lab Helper.</strong> If its window says <strong>Stopped.</strong>, double-click <strong>Start Lab Helper</strong> again; it opens a new private link. Your downloaded models and saved results are still on this laptop.</div>
+    <div id="connection-lost" class="notice lab-only" hidden role="alert"><strong>Cannot reach the Lab Helper.</strong> Open Local AI Lab again and use its new browser tab. Your downloaded models and saved results are on this laptop.</div>
     <section id="view-deploy" class="view" aria-labelledby="deploy-title">
       <div class="lab-only lab-app" id="lab-setup">
         <div class="lab-head"><div class="page-intro"><p class="eyebrow">SET UP</p><h1 id="setup-title">Run AI on <em>your laptop.</em></h1><p>Nothing changes until you approve it, and you can run any step yourself instead. Stop if a step asks for an admin password or a security change.</p></div>
@@ -67,7 +69,8 @@
       <div class="public-only">
       <div class="lab-hero">
         <div class="lab-hero-top"><div><h1 id="deploy-title"><span>Run AI on</span> <em>your laptop.</em></h1>
-        <p class="lab-lede">Your questions stay on your computer. You see every step before it happens.</p></div>
+        <p class="lab-lede">Start with one small model in your browser. Add a second to see how model size affects speed.</p>
+        <p class="button-row"><a class="button primary" href="#browser">Run in this browser</a> <a class="button secondary" href="#preview">Watch the recorded demo</a></p></div>
         <div class="lab-figure lab-hero-figure" data-figure="laptop" data-play data-label="A line drawing of a laptop opening on its hinge"></div></div>
         <div class="lab-tool">
           <div class="lab-ask">
@@ -77,19 +80,11 @@
           </div>
           <div class="lab-answer" id="answer" aria-live="polite"><p class="lab-ghost">Pick one to see<br>what you can run.</p></div>
         </div>
-        <p class="lab-start"><a class="button secondary" href="#preview">Try the one-minute demo first <span aria-hidden="true">→</span></a></p>
-        <p class="lab-start">Already downloaded it? <a href="#start">The start guide</a> shows how to open it.</p>
       </div>
 
-
-      <div class="lab-next"><h2>After you download it</h2>
-        <p>The start guide walks you from the download to the lab opening, one screen at a time. It shows what you should see at each step, and what to do if you see something else.</p>
-        <p><a class="button primary" href="#start">Open the start guide <span aria-hidden="true">→</span></a></p></div>
-
-      <div class="lab-trust">
-        <div><div class="lab-figure lab-trust-figure" data-figure="drawer" data-label="A cabinet of drawers"></div><h3>It adds</h3><p>The lab folder, the model you choose, and Ollama, which you install yourself.</p></div>
-        <div><div class="lab-figure lab-trust-figure" data-figure="padlock" data-label="A padlock"></div><h3>It never</h3><p>Needs your password, sends your questions anywhere, or turns off security.</p></div>
-        <div><div class="lab-figure lab-trust-figure" data-figure="plug" data-label="A plug and its socket"></div><h3>To remove it</h3><p>Click Undo for the model, delete the folder, and remove Ollama like any other app.</p></div>
+      <div class="lab-next"><h2>Measure CPU and RAM with the desktop lab</h2>
+        <p>Benchmark your installed Ollama models, measure process CPU and RAM, and compare models in one session.</p>
+        <p><a class="button secondary" href="#start">Desktop setup and releases</a></p>
       </div>
 
       <h2 class="lab-help-title" id="help">Help</h2>
@@ -98,19 +93,6 @@
         <form id="err-form"><textarea id="err" rows="3" aria-label="Error text" placeholder="zsh: command not found: ollama"></textarea><button class="button primary" type="submit">Check it</button><div id="err-out" aria-live="polite"></div></form>
       </div>
 
-      <div class="lab-more">
-        <details><summary>My laptop blocked the Start file</summary>
-          <p>Laptops warn about downloaded files from developers they don't recognize. Don't turn off any security setting. Start it from a terminal instead, which changes no settings. It's a plain text file, so you can read it first.</p>
-          <p><b>Mac:</b> follow <a href="#start">the start guide</a>. You type <code class="cmd">bash</code> and a space in Terminal, drag in the Start Lab on Mac file, and press Return.</p>
-          <p><b>Windows:</b> open Command Prompt, drag <b>Start Lab Helper.bat</b> from the <b>agent</b> folder into the window, and press Enter.</p>
-          <p class="fine-print">If your school or company manages this laptop and it still won't run, stop and ask them.</p>
-        </details>
-        <details><summary>I've done this before: show the commands</summary>
-          <div class="code-box"><div class="code-label"><span>START IN ANY FOLDER</span><button class="copy-button" data-copy="direct-command">Copy commands</button></div><pre id="direct-command"></pre></div>
-          <p class="fine-print">Have Ollama and Python 3.11+ ready first. No admin rights are needed for these commands. If something asks for them, stop.</p>
-          <p class="fine-print">Prefer to do every step by hand? <a href="https://github.com/aryawuyitong/local-llm-telemetry-dashboard#do-it-all-by-hand-the-full-7-steps" target="_blank" rel="noopener noreferrer">The README has the full 7 steps.</a></p>
-        </details>
-      </div>
       </div>
     </section>
 
@@ -121,10 +103,57 @@
     </section>
 
 
+    <section id="view-browser" class="view public-only browser-lab" hidden aria-labelledby="browser-title">
+      <div class="page-intro">
+        <h1 id="browser-title">Run a model <em>in your browser.</em></h1>
+        <p>Windows and Mac learners can start here. The first run fetches the selected model files. Later runs can reuse files your browser kept.</p>
+      </div>
+      <div class="browser-workspace">
+        <div class="browser-panel">
+          <h2>Choose models</h2>
+          <div id="browser-models" class="browser-models"></div>
+          <div class="browser-options">
+            <label for="browser-device">Processor
+              <select id="browser-device"><option value="auto">Automatic</option><option value="wasm">CPU</option><option value="webgpu">WebGPU</option></select>
+            </label>
+            <label for="browser-mode">Test length
+              <select id="browser-mode"><option value="quick">Quick · 1 prompt</option><option value="standard">Standard · 9 runs</option></select>
+            </label>
+          </div>
+          <p id="browser-estimate" class="fine-print"></p>
+          <div class="button-row"><button type="button" id="browser-run" class="button primary" disabled>Run benchmark</button><button type="button" id="browser-stop" class="button secondary" hidden>Stop</button></div>
+          <noscript><p>Enable JavaScript to run a model in this browser.</p></noscript>
+          <p id="browser-status" role="status" aria-live="polite">Checking this browser…</p>
+          <progress id="browser-progress" aria-label="Current model file" hidden></progress>
+          <div id="browser-errors" role="alert" hidden></div>
+        </div>
+        <aside class="browser-panel browser-explain">
+          <h2>What the browser can measure</h2>
+          <dl><dt>Preparation</dt><dd>Time to load each model, including any first-use transfer.</dd>
+            <dt>Response speed</dt><dd>Time until the first visible text and generated tokens per second.</dd>
+            <dt>Processor</dt><dd>CPU or WebGPU, depending on the backend that ran the model.</dd>
+            <dt>CPU, RAM and GPU usage</dt><dd>System and process counters are unavailable to this browser page. <a href="#start">See desktop telemetry options.</a></dd></dl>
+          <p class="fine-print">Models use the same prompts and run one at a time. Prompts and generated replies stay on this device.</p>
+          <a href="#preview">View a recorded run without model files</a>
+        </aside>
+      </div>
+      <section class="browser-panel browser-results" aria-labelledby="browser-results-title">
+        <h2 id="browser-results-title">Your measured results</h2>
+        <p id="browser-empty">Run a benchmark to see its results here.</p>
+        <div id="browser-comparison"></div>
+        <button type="button" id="browser-export" class="button secondary" hidden>Save browser results</button>
+      </section>
+    </section>
+
     <section id="view-start" class="view public-only" hidden aria-labelledby="start-title">
-      <div class="lab-app start"><div class="page-intro"><p class="eyebrow">START GUIDE · MAC</p><h1 id="start-title">From download <em>to running.</em></h1><p>Five short steps. Each one shows what you should see, so you always know whether it worked.</p></div>
-        <p class="note warn" id="start-windows" hidden><strong>This guide is for Mac.</strong> On Windows, unzip the download, open the <b>agent</b> folder and double-click <b>Start Lab Helper.bat</b>. A Windows guide isn't written yet.</p>
-        <div id="start-body"></div></div>
+      <div class="lab-app start"><div class="page-intro"><p class="eyebrow">DESKTOP LAB</p><h1 id="start-title">Measure your laptop <em>with Ollama.</em></h1><p>The desktop lab reads process CPU and RAM and displays Ollama's reported GPU memory when available. It reuses compatible models already installed in Ollama.</p></div>
+        <div class="browser-panel">
+          <h2>Mac and Windows apps</h2>
+          <p>Desktop downloads will appear on the release page when verified builds are available. You can start now in the browser lab.</p>
+          <p class="button-row"><a class="button primary" href="#browser">Open browser lab</a><a class="button secondary" href="https://github.com/aryawuyitong/local-llm-telemetry-dashboard/releases">Check desktop releases</a></p>
+          <p class="fine-print">Desktop inference uses <a href="https://ollama.com/download">Ollama</a>. Available models stay on your laptop between tests.</p>
+        </div>
+      </div>
     </section>
 
     <section id="view-catalog" class="view" hidden aria-labelledby="catalog-title">

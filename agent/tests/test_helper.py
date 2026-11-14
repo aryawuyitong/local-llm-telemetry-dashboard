@@ -597,8 +597,10 @@ class LabLogic(unittest.TestCase):
         self.assertEqual(lab.changes()["changes"][0]["undo_model"], "qwen2.5:0.5b")
         with mock.patch.object(lab.tools, "budget_state", return_value=state), \
              mock.patch.object(lab, "runtime_state", return_value={**rt, "models": ["qwen2.5:0.5b"]}), \
-             mock.patch.object(helper.ChatClient, "pull_stream", return_value=iter(progress)):
-            lab._do_pull_model({"log": []}, "qwen2.5:0.5b")
+             mock.patch.object(helper.ChatClient, "pull_stream") as download:
+            result = lab._do_pull_model({"log": []}, "qwen2.5:0.5b")
+            download.assert_not_called()
+            self.assertFalse(result["downloaded"])
         self.assertEqual(len(lab.changes()["changes"]), 1)
         with mock.patch.object(lab.tools, "budget_state", return_value=state), \
              mock.patch.object(lab, "runtime_state", return_value=rt), \
