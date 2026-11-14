@@ -1,5 +1,6 @@
 const RUNTIME_VERSION = '3.8.1';
-const TRANSFORMERS_MODULE = `https://cdn.jsdelivr.net/npm/@huggingface/transformers@${RUNTIME_VERSION}/dist/transformers.web.js`;
+// The bundled build resolves ONNX Runtime dependencies inside a browser worker.
+const TRANSFORMERS_MODULE = `https://cdn.jsdelivr.net/npm/@huggingface/transformers@${RUNTIME_VERSION}/dist/transformers.min.js`;
 
 const MODELS = {
   'smol-135': {
