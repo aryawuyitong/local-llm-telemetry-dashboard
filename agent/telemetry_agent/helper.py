@@ -36,13 +36,13 @@ from . import answers, guardrails
 from .actions import APP_ACTIONS, PAGE_IDS, PLAN, REGISTRY, app_plan, ollama_app, runtime_context
 from .apps import APPS, app_context, app_path, install_command, manager as app_manager, remove_command, where_apps_go
 from .agent import LabAgent
-from .config import ROOT, Settings
+from .config import PORTAL_DIR, ROOT, Settings, launcher_details
 from .recipes import load_recipes
 from .llm import ChatClient, LLMError
 from .router import route
 from .tools import Toolbox, _brief, validate_tool_args
 
-WEB_DIR = Path(__file__).resolve().parents[2] / "portal"
+WEB_DIR = PORTAL_DIR
 CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
                  ".css": "text/css; charset=utf-8", ".json": "application/json", ".woff2": "font/woff2"}
 # Only what the website needs, listed once at startup. Tests, notes and licence files are not served.
@@ -132,9 +132,7 @@ class Lab:
         broken = client.missing_files(listed) if running else []
         models = [m for m in listed if m not in broken]
         binary = "ollama" if self.settings.runtime == "ollama" else "llama-server"
-        installed = running or bool(shutil.which(binary))
-        if self.settings.runtime == "ollama" and platform.system() == "Darwin":
-            installed = installed or any(p.is_dir() for p in (Path("/Applications/Ollama.app"), Path.home() / "Applications/Ollama.app"))
+        installed = running or bool(shutil.which(binary)) or (self.settings.runtime == "ollama" and bool(ollama_app()))
         folder = self.settings.runtime_models_dir
         return {"name": "Ollama" if self.settings.runtime == "ollama" else "llama.cpp (experimental)",
                 "installed": bool(installed), "running": running, "models": models, "broken_models": broken,
@@ -251,7 +249,7 @@ class Lab:
         """Labels for the two cards the page draws itself. They come from the registry like every other card."""
         model = min(self.allowed.values(), key=lambda m: m["params_b"])
         ctx = runtime_context(model, {"installed": True, "running": True, "models": [], "broken_models": []})
-        return {action: REGISTRY[action].step(ctx)["risk"] for action in ("check_hardware", "benchmark")}
+        return {action: REGISTRY[action].step(ctx)["risk"] for action in ("check_hardware", "benchmark", "benchmark_queue")}
 
     def describe_action(self, action, args):
         """The approval card for one registered action, e.g. one the assistant proposes. Never runs it."""
@@ -433,6 +431,16 @@ class Lab:
                 validate_tool_args("check_install", args)
             elif action == "benchmark":
                 validate_tool_args("run_benchmark", args)
+            elif action == "benchmark_queue":
+                models = args.get("models")
+                if not isinstance(models, list) or not 1 <= len(models) <= 3:
+                    raise ValueError("Select one to three installed models.")
+                options = {key: value for key, value in args.items() if key != "models"}
+                for model in models:
+                    self._allowed_model(model)
+                    validate_tool_args("run_benchmark", {"model": model, **options})
+                if len(set(models)) != len(models):
+                    raise ValueError("Select each model once.")
             elif action == "first_prompt":
                 validate_tool_args("run_benchmark", {"model": args["model"]})
         except ValueError as exc:
@@ -472,6 +480,12 @@ class Lab:
                         job.update(status="failed", error="All benchmark requests failed. Error records were saved locally; inspect Results and check the manual setup before retrying.")
                     elif failed or partial:
                         job.update(status="partial", warning=f"Recorded with limitations: {failed} failed and {partial} partial runs. This is not complete acceptance evidence.")
+                elif job["action"] == "benchmark_queue":
+                    finished = sum(row["status"] in {"done", "partial"} for row in result["models"])
+                    if not finished:
+                        job.update(status="failed", error="No model completed. Check each model's result below before retrying.")
+                    elif finished < len(result["models"]) or any(row["status"] != "done" or row.get("error") for row in result["models"]):
+                        job.update(status="partial", warning="Some measurements could not finish cleanly. Check each result below.")
         except Exception as exc:
             error = _safe_text(exc)
             diagnosis = self.tools.read_logs(error or "Unknown operation failure")["matches"]
@@ -519,14 +533,19 @@ class Lab:
         raise RuntimeError("Could not connect to Ollama: it didn't start within 30 seconds. Open the app yourself, then check again.")
 
     def _do_pull_model(self, job, model):
+        if model in self.runtime_state()["models"]:
+            job["log"].append(f"{model} is already on this laptop. Reusing its files.")
+            return {"model": model, "downloaded": False}
         size = self.allowed[model]["size_gb"]
         state = self.tools.budget_state()
-        free = shutil.disk_usage(Path.home()).free / 1024**3
+        model_root = self.settings.runtime_models_dir
+        while not model_root.exists() and model_root.parent != model_root:
+            model_root = model_root.parent
+        free = shutil.disk_usage(model_root).free / 1024**3
         if free - size < DISK_RESERVE_GIB:
             raise RuntimeError(f"No space left on device: {model} needs about {size} GB and {free:.1f} GB is free. We keep {DISK_RESERVE_GIB} GB for your system.")
         if state["non_model_gib"] + size > self.settings.disk_budget_gb:
             raise RuntimeError("This model would take the lab past its disk budget. Choose a smaller approved model.")
-        was_present = model in self.runtime_state()["models"]
         last = None
         for item in ChatClient(self.settings.base_url, model).pull_stream(model):
             if item.get("error"):
@@ -542,8 +561,7 @@ class Lab:
                 last = label
         if last != "success":
             raise RuntimeError("The download stopped before it finished. Approve it again to resume.")
-        if not was_present:
-            self._log_change(f"Downloaded {model}, about {size} GB, to Ollama's models folder.", undo_model=model)
+        self._log_change(f"Downloaded {model}, about {size} GB, to Ollama's models folder.", undo_model=model)
         return {"model": model, "downloaded": True}
 
     def _do_remove_model(self, job, model):
@@ -581,6 +599,57 @@ class Lab:
             result["saved_to"] = Path(result["saved_to"]).name
         job["log"].append("Session saved locally; download the anonymous JSON in Results.")
         return result
+
+    def _do_benchmark_queue(self, job, models, repeats=1, guess_tps=None, guess_ram_gb=None):
+        """Measure approved installed models serially without re-pulling their files."""
+        if self.settings.runtime != "ollama":
+            raise ValueError("This measurement queue needs Ollama.")
+        installed = set(self.runtime_state()["lab_models"])
+        missing = [model for model in models if model not in installed]
+        if missing:
+            raise ValueError(f"Set up these models in Catalog first: {', '.join(missing)}.")
+        client = ChatClient(self.settings.base_url, models[0])
+        selected = set(models)
+        running = client.loaded_models()
+        if any(model not in selected for model in running):
+            raise ValueError("An Ollama model outside this selection is active. End that session, then try again.")
+        for model in running:
+            client.unload(model)
+        if client.loaded_models():
+            raise RuntimeError("Ollama still has an active model. Wait for it to release memory, then try again.")
+
+        rows = []
+        cleanup_error = None
+        for index, model in enumerate(models):
+            job["progress"] = index / len(models)
+            job["detail"] = f"Measuring {model} ({index + 1} of {len(models)})"
+            row = {"model": model}
+            try:
+                result = self._do_benchmark(job, model, repeats, guess_tps, guess_ram_gb)
+                missing_runs = result.get("failed_runs", 0) + result.get("partial_runs", 0)
+                status = "failed" if result.get("failed_runs", 0) == result.get("runs", 0) else "partial" if missing_runs else "done"
+                row.update(status=status, result=result)
+                if status == "failed":
+                    row["error"] = "All requests failed. Inspect the local session for details."
+            except (ValueError, RuntimeError, LLMError, OSError) as exc:
+                row.update(status="failed", error=_safe_text(exc))
+            finally:
+                try:
+                    if model in client.loaded_models():
+                        client.unload(model)
+                    if client.loaded_models():
+                        raise RuntimeError("Ollama still has an active model, so the next measurement could mix resource use.")
+                except (RuntimeError, LLMError, OSError) as exc:
+                    cleanup_error = _safe_text(exc)
+                    row["error"] = " ".join(part for part in (row.get("error"), cleanup_error) if part)
+            rows.append(row)
+            if cleanup_error:
+                rows.extend({"model": pending, "status": "skipped", "error": "The previous model did not release memory safely."}
+                            for pending in models[index + 1:])
+                break
+        job["progress"] = 1
+        job["detail"] = "Measurements finished."
+        return {"models": rows, "repeats": repeats}
 
     def chat(self, text, guardrails_on=True, open_question=False):
         """open_question is the page's "Not what I asked" button: go straight to the model, and say so."""
@@ -949,10 +1018,11 @@ class Lab:
         rt = self.runtime_state()
         cli = runtime_context(None, rt)["cli"]
         tags = rt["lab_models"]
+        launcher, folder = launcher_details()
         return {"models": [{"name": m, "about": self.allowed[m]["about"], "command": f"{cli} run {m}"} for m in tags],
                 "starting_model": self._agent_model(tags),
-                "launcher": "Start Lab Helper.command" if platform.system() == "Darwin" else "Start Lab Helper.bat",
-                "folder": str(ROOT), "running": rt["running"], "installed": rt["installed"]}
+                "launcher": launcher,
+                "folder": str(folder), "running": rt["running"], "installed": rt["installed"]}
 
     def start_talk(self, model, messages, context_tokens=4096, fair=False):
         """One reply from a chosen model, built up piece by piece. The conversation lives in the page and is never saved.
@@ -1065,13 +1135,14 @@ class Lab:
                 continue
         return docs
 
-    def results_json(self):
+    def results_json(self, session_id=None):
         from . import protocol
         docs = self._exports()
-        if not docs:
-            raise LookupError("No valid schema-v1 benchmark session yet.")
+        match = next((doc for doc in docs if session_id is None or doc["session_id"] == session_id), None)
+        if match is None:
+            raise LookupError("No matching valid benchmark session was found.")
         # Validation + explicit sanitization protect against legacy/local artifact extras.
-        doc = _anonymous_export(copy.deepcopy(docs[0]))
+        doc = _anonymous_export(copy.deepcopy(match))
         # A schema-valid legacy summary is not trustworthy: it may contain free
         # text, private labels, or arbitrary nested fields. Recompute it.
         doc["summary"] = protocol.canonical_summary(doc)
@@ -1088,6 +1159,8 @@ class Lab:
             models.append({"machine": "This laptop", "model": doc.get("model", {}).get("name", "unknown") if isinstance(doc.get("model"), dict) else "unknown",
                            "runs": len(runs), "median_tps": summary.get("median_tps"),
                            "median_ttft_ms": summary.get("median_ttft_ms"), "peak_ram_mb": summary.get("peak_ram_mb"),
+                           "median_cpu_percent": summary.get("median_cpu_percent"),
+                           "acceleration": doc["model"]["acceleration"], "repeats": doc["config"]["repeats"],
                            "last_run": doc.get("created_at", ""), "session_id": doc.get("session_id"),
                            "valid_runs": summary["valid_runs"], "partial_runs": summary["partial_runs"],
                            "failed_runs": summary["failed_runs"], "data_kind": doc["data_kind"]})
@@ -1229,8 +1302,10 @@ def make_handler(lab: Lab, token: str):
                 return self._json(401, {"error": "Missing or wrong lab token. Reopen the launch link."})
             name = path[5:]
             try:
-                if method == "GET" and name == "results.json":
-                    data = json.dumps(lab.results_json(), ensure_ascii=True, allow_nan=False).encode()
+                session_file = re.fullmatch(r"results/([a-f0-9]{32})\.json", name)
+                if method == "GET" and (name == "results.json" or session_file):
+                    session_id = session_file.group(1) if session_file else None
+                    data = json.dumps(lab.results_json(session_id), ensure_ascii=True, allow_nan=False).encode()
                     return self._send(200, data, "application/json", download="local-ai-lab-session.json")
                 if method == "GET" and name == "results.csv":
                     raise BadRequest("Legacy CSV may include personal labels. Download anonymous results.json instead.")

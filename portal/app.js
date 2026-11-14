@@ -27,15 +27,15 @@
   // Old links still work: Models and Apps are now the Catalog, and measuring is one page.
   const ALIAS = { models: 'catalog', apps: 'catalog', predict: 'measure' };
   const PARTS = { measure: ['predict', 'results'] };
-  const TITLES = { learn: 'Learn', preview: 'Demo', start: 'Start guide', catalog: 'Catalog', use: 'Use it', measure: 'Measure', results: 'Results', mylab: 'My lab' };
+  const TITLES = { browser: 'Browser lab', learn: 'Learn', preview: 'Demo', start: 'Start guide', catalog: 'Catalog', use: 'Use it', measure: 'Measure', results: 'Results', mylab: 'My lab' };
   function route() {
     const lab = document.documentElement.dataset.mode === 'lab';
     const asked = location.hash.slice(1);
     let view = ALIAS[asked] || asked;
     if (view !== 'deploy' && !TITLES[view]) view = 'deploy';
-    // Each version only has its own pages: the website can't measure, and the lab needs no demo.
+    // The website and desktop lab each have a dedicated benchmark view.
     if (lab && view === 'results') view = 'measure';
-    if (lab && (view === 'preview' || view === 'start')) view = 'deploy';
+    if (lab && (view === 'preview' || view === 'start' || view === 'browser')) view = 'deploy';
     if (!lab && view === 'measure') view = 'results';
     if (!lab && (view === 'use' || view === 'mylab')) view = 'deploy';
     const parts = PARTS[view] || [view];
@@ -188,16 +188,19 @@
   }
   $('session-files').addEventListener('change', async event => { await importFiles(Array.from(event.target.files)); event.target.value = ''; });
   $('import-json').addEventListener('click', () => $('session-files').click());
-  // When the helper serves this site, lab.js passes in this laptop's latest session. It stays in memory on this page.
+  // These measured sessions come from the token-protected local helper.
   window.LocalLabPortal = {
-    showSession(sessionText) {
-      if (sessionText.length > D.MAX_FILE_BYTES) return;
-      let result = D.parseSession(sessionText);
-      if (result.session && state.sessions.some(s => s.session_id === result.session.session_id)) return;
-      if (result.session) result = D.addSession(state.sessions, result.session);
-      if (result.session) state.sessions.push(result.session);
+    showLocalSessions(sessionTexts) {
+      if (document.documentElement.dataset.mode !== 'lab') return;
+      state.sessions = [];
       $('import-messages').replaceChildren();
-      if (result.errors && result.errors.length) importMessage('This laptop', result);
+      for (const sessionText of sessionTexts) {
+        if (sessionText.length > D.MAX_FILE_BYTES) continue;
+        let result = D.parseSession(sessionText);
+        if (result.session) result = D.addSession(state.sessions, result.session);
+        if (result.session) state.sessions.push(result.session);
+        if (result.errors?.length) importMessage('This laptop', result);
+      }
       updateFilters(); renderResults();
     },
   };

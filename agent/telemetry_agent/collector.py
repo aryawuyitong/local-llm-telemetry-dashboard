@@ -412,7 +412,9 @@ def run_benchmark(model: str, settings: Settings, repeats: int = 3,
                    "runs": rows, "summary": summary}
         validate_session(session)
         out = _save(settings.results_dir, session)
-        return {**summary, "session_id": session_id, "saved_to": str(out), "data_kind": "measured"}
+        return {**summary, "session_id": session_id, "saved_to": str(out), "data_kind": "measured",
+                "acceleration": metadata["acceleration"],
+                "gpu_resident_bytes": metadata.get("gpu_resident_bytes") if not warmup_failed else None}
 
 
 def _save(results_dir: Path, session: dict) -> Path:

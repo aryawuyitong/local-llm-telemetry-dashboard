@@ -40,7 +40,7 @@ async function api(path, body) {
   try { r = await fetch('/api/' + path, opts); }
   catch (_) {
     $('#connection-lost').hidden = false;
-    throw new Error('Cannot reach the local Lab Helper. If its terminal says "Stopped.", restart it from agent/ and open the new private link printed there. Your model download and saved results are still on this laptop.');
+    throw new Error('Cannot reach the local Lab Helper. Open Local AI Lab again and use its new browser tab. Your models and saved results are on this laptop.');
   }
   const j = await r.json().catch(() => ({ error: `Unexpected response (${r.status})` }));
   if (!r.ok) {
@@ -184,7 +184,7 @@ function renderLaptop() {
       ${fact('System', `${hw.os} ${hw.os_version}`)}
       ${fact('Chip', hw.cpu_model, `${hw.cpu_cores_physical} cores · ${hw.arch}`)}
       ${fact('Memory (RAM)', `${hw.total_ram_gb} GiB`, `${hw.available_ram_gb} GiB free right now`)}
-      ${fact('Free disk', `${hw.free_disk_gb} GiB`, '10 GiB project cap: lab, runtime and one selected model')}
+      ${fact('Free disk', `${hw.free_disk_gb} GiB`, '10 GiB cap for the lab, runtime and the model being measured')}
       ${fact('Graphics', hw.gpu)}
     </div>${toolChip('check_hardware', 'read only')}
     ${hw.supported_stop ? `<p class="note warn">${esc(hw.supported_stop)}</p>` : ''}
@@ -537,7 +537,7 @@ async function chooseGoal(goal) {
 
 function renderModel() {
   const r = state.rec;
-  const budgetNote = `<p class="small muted">Free memory right now: ${esc(r.free_ram_now_gb)} GiB, and we plan for up to ${esc(r.planning_ram_gb)} GiB once you close apps. The lab, Python and Ollama use ${esc(r.budget.non_model_gib)} GiB, which leaves ${esc(r.project_headroom_gib)} GiB for one model under the 10 GiB limit. Other Ollama models you already have (${esc(r.budget.installed_models_gib)} GiB) aren't counted.</p>`;
+  const budgetNote = `<p class="small muted">Free memory right now: ${esc(r.free_ram_now_gb)} GiB. The lab, Python and Ollama use ${esc(r.budget.non_model_gib)} GiB, which leaves ${esc(r.project_headroom_gib)} GiB for the selected model under the 10 GiB limit. Ollama can keep several model files on disk. The lab checks free space before each download.</p>`;
   if (!r.pick) { $('#model-body').innerHTML = `<p class="note warn">${esc(r.explanation)}</p>${budgetNote}`; return; }
   const have = new Set(state.status.runtime.lab_models);
   const installed = [...have].sort();
@@ -546,7 +546,7 @@ function renderModel() {
       <div><div><strong>${esc(o.name)}</strong>${o.name === r.pick.name ? '<span class="tag">Suggested</span>' : ''}${have.has(o.name) ? '<span class="tag ok">Already downloaded</span>' : ''}</div>
         <div class="small muted">${o.params_billion} billion learned numbers · about ${o.download_file_size_gb} GB to download · needs about ${o.needs_free_ram_gb} GB of free memory</div></div></label>`).join('');
   $('#model-body').innerHTML = `<p>${esc(r.goal_why)}</p>
-    ${installed.length ? `<div class="note">You already have <strong>${installed.map(esc).join(', ')}</strong>. <button class="btn small" data-goto="measure">Measure one of these</button></div>` : ''}
+    ${installed.length ? `<div class="note">Ready on your laptop: <strong>${installed.map(esc).join(', ')}</strong>.<div class="row-actions mt"><button class="btn small" data-goto="measure">Measure installed models</button><button class="btn small" data-goto="catalog">Add another model</button></div></div>` : ''}
     <div class="options">${opts}</div>
     ${r.before_you_run ? `<p class="note warn">${esc(r.before_you_run)}</p>` : ''}
     <details><summary>How we worked this out</summary>
@@ -684,46 +684,60 @@ function renderPredict() {
     return;
   }
   const p = state.predict;
-  const model = models.includes(p.model) ? p.model : (models.includes(state.model) ? state.model : models[0]);
-  p.model = model;
+  const selected = p.models ? p.models.filter(model => models.includes(model)) : [models.includes(state.model) ? state.model : models[0]];
+  if (p.models && selected.length !== p.models.length) p.step = null;
+  p.models = selected;
   $('#predict-body').innerHTML = `<div class="card">
-      <label class="field" for="pr-model"><span class="lbl">Model</span>
-        <select id="pr-model">${models.map(m => `<option ${m === model ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></label>
+      <fieldset class="measure-choice"><legend>Choose up to three downloaded models</legend>
+        <div class="measure-models">${models.map(model => `<label><input type="checkbox" name="measure-model" value="${esc(model)}" ${selected.includes(model) ? 'checked' : selected.length >= 3 ? 'disabled' : ''}> <span>${esc(model)}</span></label>`).join('')}</div>
+      </fieldset>
+      <label class="field" for="pr-repeats"><span class="lbl">How thorough?</span>
+        <select id="pr-repeats"><option value="1" ${p.repeats === 3 ? '' : 'selected'}>Quick · 3 timed prompts per model</option><option value="3" ${p.repeats === 3 ? 'selected' : ''}>Full · 9 timed prompts per model</option></select></label>
+      <p class="small muted">The lab runs your selections one at a time and releases their working memory between runs. Downloads stay on this laptop.</p>
+      <div class="row-actions"><button class="btn small" data-goto="catalog">Add another model from Catalog</button></div>
+      ${selected.length === 1 ? `
       <label class="field" for="pr-tps"><span class="lbl">Your guess: speed <output id="o-tps">${p.tps ?? 20} tokens/s</output></span>
         <input type="range" id="pr-tps" min="1" max="100" step="1" value="${p.tps ?? 20}">
         <span class="hint">Tokens are pieces of words, so this is how fast the reply appears.</span></label>
       <label class="field" for="pr-ram"><span class="lbl">Your guess: memory <output id="o-ram">${(p.ram ?? 2).toFixed(1)} GiB</output></span>
         <input type="range" id="pr-ram" min="0.5" max="10" step="0.1" value="${p.ram ?? 2}">
-        <span class="hint">Hint: start from the download size, then add a little for the conversation.</span></label>
+        <span class="hint">Hint: start from the download size, then add a little for the conversation.</span></label>` : ''}
     </div>
-    <div id="pr-step"></div><div id="pr-result"></div>`;
+    <div id="pr-step"></div><div id="pr-result" aria-live="polite"></div>`;
   renderPredictStep();
   if (p.result) renderPrediction(p.result);
 }
 
 function predictStep() {
   const p = state.predict;
-  p.step = p.step && p.step.args.model === p.model ? p.step : {
-    id: 'benchmark', action: 'benchmark', kind: 'action', title: `Measure ${p.model}`,
-    why: 'Shows how fast this model really is here. It runs one warm-up, then three fixed questions three times each.',
-    does: 'Keeps your processor and memory busy, which can take a few minutes. Saves the nine results in a file on this laptop, with no name in it.',
-    command: null, args: { model: p.model, repeats: 3 }, risk: state.benchmarkRisk,
+  p.step ??= {
+    id: 'benchmark_queue', action: 'benchmark_queue', kind: 'action', title: `Measure ${p.models.length === 1 ? p.models[0] : `${p.models.length} models`}`,
+    why: 'Identical prompts and settings let you compare speed and resource use.',
+    does: 'Runs a warm-up and timed prompts on each model in order, then saves a separate result file for each.',
+    command: null, args: { models: p.models.slice(), repeats: p.repeats || 1 }, risk: state.benchmarkQueueRisk,
   };
   return p.step;
 }
 
-function renderPredictStep() { $('#pr-step').innerHTML = stepCard(predictStep(), true); }
+function renderPredictStep() {
+  $('#pr-step').innerHTML = state.predict.models.length ? stepCard(predictStep(), true) : '<p class="muted">Choose at least one model to measure.</p>';
+}
 
 async function runPrediction() {
   const p = state.predict;
+  if (p.running || !p.models.length) return;
   const s = predictStep();
   s.done = false; s.result = null;
-  s.args = { model: p.model, repeats: 3, guess_tps: p.tps ?? 20, guess_ram_gb: p.ram ?? 2 };
+  if (p.models.length === 1) Object.assign(s.args, { guess_tps: p.tps ?? 20, guess_ram_gb: p.ram ?? 2 });
   p.running = true;
+  $('#predict-body').querySelectorAll('input, select').forEach(element => { element.disabled = true; });
   $('#pr-result').innerHTML = '';
   await runStep(s, renderPredictStep);
   p.running = false;
-  if (s.result) { p.result = s.result; renderPrediction(s.result); s.done = false; renderPredictStep(); refreshStatus(); }
+  p.result = s.result;
+  if (s.done) p.step = null;
+  renderPredict();
+  if (s.result) { loadResults(); refreshStatus(); }
 }
 
 function compareBars(title, c, unit) {
@@ -736,42 +750,77 @@ function compareBars(title, c, unit) {
     <div class="bar actual"><span>Actual</span><div class="track"><div class="fill" data-w="${c.actual / max * 100}"></div></div><span class="num">${c.actual} ${unit}</span></div></div>`;
 }
 
-function renderPrediction(r) {
-  const pc = r.prediction_check || {};
-  const q = `I guessed ${pc.tps ? pc.tps.guess : '?'} tokens/s and ${pc.ram_gb ? pc.ram_gb.guess : '?'} GiB for ${r.model}. ` +
-    `It measured ${r.median_tps} tokens/s and ${pc.ram_gb ? pc.ram_gb.actual : '?'} GiB. Why was my guess off?`;
-  $('#pr-result').innerHTML = `<div class="card"><h3>${r.failed_runs === r.runs && r.runs > 0 ? 'Every run failed' : 'Your guess and the real numbers'}: ${esc(r.model)}</h3>
-    ${(r.failed_runs || r.partial_runs) ? `<p class="note warn">${r.valid_runs ?? 0} complete, ${r.partial_runs ?? 0} partial, ${r.failed_runs ?? 0} failed. Treat these numbers with care, because some runs did not finish.</p>` : ''}
-    ${compareBars('Speed', pc.tps, 'tok/s')}${compareBars('Memory', pc.ram_gb, 'GB')}
-    <div class="kpis">${fact('Wait for the first word', r.median_ttft_ms == null ? 'Unavailable' : `${r.median_ttft_ms} ms`, 'the middle of the runs')}${fact('Warm-up reply', r.warmup_round_trip_s == null ? 'Unavailable' : `${r.warmup_round_trip_s} s`)}
-      ${fact('CPU', r.median_cpu_percent == null ? 'Unavailable' : `${r.median_cpu_percent}%`, 'how busy the processor was; the graphics chip is not counted')}${fact('Peak memory', r.peak_ram_mb == null ? 'Unavailable' : `${Math.round(r.peak_ram_mb)} MiB`)}</div>
-    ${r.note ? `<p class="small muted mt">${esc(r.note)}</p>` : ''}
-    ${toolChip('run_benchmark', 'saved, and charted below')}
-    <div class="actions"><button class="btn" data-ask="${esc(q)}">Ask the assistant why</button><button class="btn" data-goto="measure">See all results</button></div></div>`;
+function metric(value, unit, precision = 1) {
+  return Number.isFinite(value) ? `${value.toFixed(precision)} ${unit}` : 'Unavailable';
+}
+
+function acceleration(value) {
+  return value === 'gpu-assisted' ? 'GPU assisted' : value === 'cpu' ? 'CPU only' : 'Unavailable';
+}
+
+function renderPrediction(queue) {
+  const peakRam = Math.max(1, ...queue.models.map(row => row.result?.peak_ram_mb ?? 0));
+  const peakGpuMiB = Math.max(1, ...queue.models.map(row => (row.result?.gpu_resident_bytes ?? 0) / 1024 ** 2));
+  const meter = (value, max, label) => Number.isFinite(value)
+    ? `<meter aria-label="${label}" min="0" max="${max}" value="${value}"></meter>` : '';
+  const tiles = queue.models.map(({model, status, result: r, error}) => {
+    const pc = r?.prediction_check || {};
+    const cpu = r?.median_cpu_percent;
+    const gpuMiB = r?.gpu_resident_bytes == null ? null : r.gpu_resident_bytes / 1024 ** 2;
+    return `<article class="card measurement-card"><h4>${esc(model)}</h4>
+      ${error ? `<p class="note ${status === 'done' || status === 'partial' ? 'warn' : 'bad'}">${esc(error)}</p>` : ''}
+      ${r ? `<p class="small muted">${r.valid_runs} complete · ${r.partial_runs} partial · ${r.failed_runs} failed</p>
+      <dl class="measurement-metrics"><div><dt>Generation</dt><dd>${metric(r.median_tps, 'tokens/s')}</dd></div>
+        <div><dt>First text</dt><dd>${metric(r.median_ttft_ms, 'ms')}</dd></div>
+        <div><dt>Process CPU</dt><dd>${metric(cpu, '%')}${meter(cpu, 100, 'Median process CPU')}</dd></div>
+        <div><dt>Peak process RAM</dt><dd>${metric(r.peak_ram_mb, 'MiB', 0)}${meter(r.peak_ram_mb, peakRam, 'Peak process RAM')}</dd></div>
+        <div><dt>GPU memory at warm-up</dt><dd>${metric(gpuMiB, 'MiB', 0)}${meter(gpuMiB, peakGpuMiB, 'GPU memory at warm-up')}</dd></div>
+        <div><dt>GPU acceleration</dt><dd>${acceleration(r.acceleration)}</dd></div></dl>
+        ${compareBars('Speed', pc.tps, 'tok/s')}${compareBars('Memory', pc.ram_gb, 'GiB')}` : ''}</article>`;
+  });
+  $('#pr-result').innerHTML = `<h3>Measurement results</h3><div class="measurement-grid">${tiles.join('')}</div>
+    <p class="small muted mt">CPU and RAM come from Ollama and its child processes. Memory bars share a scale for each metric across the selected models. Ollama reports GPU memory after warm-up when available. GPU utilization percentage is unavailable.</p>`;
 }
 
 // ------------------------------------------------------------------ results
 async function loadResults() {
   try {
-    const r = await fetch('/api/results.json', { headers: { 'X-Lab-Token': TOKEN || '' } });
-    if (!r.ok) {
+    const history = await api('results');
+    if (!history.models.length) {
       $('#results-body').innerHTML = `<div class="card lab-note"><div class="lab-figure lab-state-figure" data-figure="plot" data-label="An empty bar chart"></div><p>No measurements yet.</p><button class="btn primary" data-goto="measure">Measure a model</button></div>`;
       return;
     }
-    window.LocalLabPortal.showSession(await r.text());
-    $('#results-body').innerHTML = `<div class="card lab-note"><p>Your latest measurement from this laptop is in the charts below. It stays on your laptop.</p>
-      <p class="small muted">Want to help other students see what a laptop like yours can do? Download the file and send it to the team. It has no name, account or folder path in it, and the lab never sends it for you.</p>
-      <div class="actions"><button class="btn" data-download>Download JSON</button><button class="btn" data-goto="mylab">See all measurements</button></div></div>`;
+    const completed = state.predict.result?.models.map(row => row.result?.session_id).filter(Boolean) || [];
+    const grouped = completed.length ? completed : [history.models[0].session_id];
+    const documents = await Promise.allSettled(grouped.map(sessionId => resultFile(sessionId).then(response => response.text())));
+    window.LocalLabPortal.showLocalSessions(documents.filter(doc => doc.status === 'fulfilled').map(doc => doc.value));
+    $('#results-body').innerHTML = `<div class="card lab-note"><h3>Recent local measurements</h3>
+      <p class="small muted">Compare like for like. Quick runs have three timed prompts and full runs have nine. CPU and RAM describe the runtime process tree.</p>
+      <div class="table-wrap"><table><thead><tr><th>Model</th><th>Tokens/s</th><th>First text</th><th>CPU</th><th>Peak RAM</th><th>Acceleration</th><th>Complete</th><th>Export</th></tr></thead>
+      <tbody>${history.models.slice(0, 12).map(m => `<tr><td>${esc(m.model)}<div class="small muted">${esc(when(m.last_run))}</div></td>
+        <td>${metric(m.median_tps, 'tok/s')}</td><td>${metric(m.median_ttft_ms, 'ms')}</td><td>${metric(m.median_cpu_percent, '%')}</td>
+        <td>${metric(m.peak_ram_mb, 'MiB', 0)}</td><td>${acceleration(m.acceleration)}</td><td>${m.valid_runs}/${m.runs}</td>
+        <td>${/^[a-f0-9]{32}$/.test(m.session_id) ? `<button class="btn small" data-download="${m.session_id}">JSON</button>` : ''}</td></tr>`).join('')}</tbody></table></div>
+      <div class="actions"><button class="btn" data-download>Download latest JSON</button><button class="btn" data-goto="mylab">Open My lab</button></div></div>`;
   } catch (e) { $('#results-body').innerHTML = errorHtml(e.message); }
 }
 
-async function downloadJson() {
+async function resultFile(sessionId) {
+  const path = /^[a-f0-9]{32}$/.test(sessionId) ? `/api/results/${sessionId}.json` : '/api/results.json';
+  const response = await fetch(path, { headers: { 'X-Lab-Token': TOKEN || '' } });
+  if (!response.ok) {
+    const out = await response.json();
+    throw new Error(out.error || 'Download failed.');
+  }
+  return response;
+}
+
+async function downloadJson(sessionId) {
   try {
-    const r = await fetch('/api/results.json', { headers: { 'X-Lab-Token': TOKEN || '' } });
-    if (!r.ok) { const out = await r.json(); throw new Error(out.error || 'Download failed.'); }
+    const r = await resultFile(sessionId);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(await r.blob());
-    a.download = 'local-ai-lab-session.json';
+    a.download = /^[a-f0-9]{32}$/.test(sessionId) ? `local-ai-lab-${sessionId.slice(0, 12)}.json` : 'local-ai-lab-session.json';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   } catch (e) { $('#results-body').insertAdjacentHTML('beforeend', errorHtml(e.message)); }
@@ -1166,14 +1215,14 @@ document.addEventListener('click', async e => {
   if ('useModel' in d) { loadPlan(); return; }
   if ('recheck' in d) { await refreshStatus(); if (t.closest('#app-plan') && state.appPlan) loadAppPlan(state.appPlan.app.id); else if (t.closest('#recipe-plan') && state.recipePlan) loadRecipePlan(state.recipePlan.recipe.id, false); else loadPlan(); return; }
   if ('try' in d) { tryModel(); return; }
-  if ('download' in d) { downloadJson(); return; }
+  if ('download' in d) { downloadJson(d.download); return; }
   if (d.ask) { ask(d.ask); return; }
   if (d.askOpen) { ask(d.askOpen, true); return; }
   if (d.approve === 'check_hardware') {
     if (await runStep(hwStep, renderLaptop)) { state.hw = hwStep.result; renderLaptop(); await afterLaptopCheck(); }
     return;
   }
-  if (d.approve === 'benchmark') { runPrediction(); return; }
+  if (d.approve === 'benchmark_queue') { runPrediction(); return; }
   if (d.approve) {
     const s = findStep(d.approve);
     if (!s) return;
@@ -1190,7 +1239,17 @@ document.addEventListener('change', e => {
   if (e.target.id === 'talk-model') { state.use.model = e.target.value; }
   if (e.target.id === 'cmp-a') { state.use.compare.a = e.target.value; }
   if (e.target.id === 'cmp-b') { state.use.compare.b = e.target.value; }
-  if (e.target.id === 'pr-model') { state.predict.model = e.target.value; state.predict.result = null; renderPredict(); }
+  if (e.target.name === 'measure-model' || e.target.id === 'pr-repeats') {
+    const p = state.predict;
+    if (p.running) return;
+    const changedModel = e.target.name === 'measure-model' ? e.target.value : null;
+    p.models = [...$('#predict-body').querySelectorAll('input[name="measure-model"]:checked')].map(input => input.value);
+    p.repeats = +$('#pr-repeats').value;
+    p.step = null;
+    renderPredict();
+    if (changedModel) [...$('#predict-body').querySelectorAll('input[name="measure-model"]')].find(input => input.value === changedModel)?.focus();
+    else $('#pr-repeats').focus();
+  }
   if (e.target.id === 'safety') {
     state.safety = e.target.checked;
     $('#safety-off').hidden = state.safety;
@@ -1212,7 +1271,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   try { saved = sessionStorage.getItem('labAssistant'); } catch (_) { /* private mode */ }
   setAssistant(innerWidth >= 1180 && (saved ? saved === '1' : true));
   renderLaptop();
-  api('risks').then(r => { hwStep.risk = r.check_hardware; state.benchmarkRisk = r.benchmark; if (!state.hw) renderLaptop(); }).catch(() => {});
+  api('risks').then(r => {
+    hwStep.risk = r.check_hardware;
+    state.benchmarkQueueRisk = r.benchmark_queue;
+    if (!state.hw) renderLaptop();
+    if (state.predict.step) {
+      state.predict.step.risk = r.benchmark_queue;
+      renderPredictStep();
+    }
+  }).catch(() => {});
   await refreshStatus();
   renderGoals();
   applyLevel();

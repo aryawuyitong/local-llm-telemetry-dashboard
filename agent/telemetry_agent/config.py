@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import sys
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -11,7 +12,39 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 ROOT = Path(__file__).resolve().parent.parent
-SKILL_DIR = ROOT / "skill"
+FROZEN = bool(getattr(sys, "frozen", False))
+BUNDLE_RESOURCES = Path(sys._MEIPASS) if FROZEN else ROOT.parent  # set by PyInstaller
+SKILL_DIR = (BUNDLE_RESOURCES / "agent" if FROZEN else ROOT) / "skill"
+PORTAL_DIR = BUNDLE_RESOURCES / "portal"
+
+
+def lab_data_dir() -> Path:
+    """Keep bundled app data outside the application, which may be read-only."""
+    if not FROZEN:
+        return ROOT
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "Local AI Lab"
+    return Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") / "Local AI Lab"
+
+
+def _app_bundle() -> Path | None:
+    executable = Path(sys.executable).resolve()
+    return next((path for path in executable.parents if path.suffix == ".app"), None)
+
+
+def lab_install_roots() -> list[Path]:
+    if not FROZEN:
+        return [ROOT, Path(sys.prefix)]
+    bundle = _app_bundle() if sys.platform == "darwin" else None
+    return [bundle] if bundle else [Path(sys.executable), BUNDLE_RESOURCES]
+
+
+def launcher_details() -> tuple[str, Path]:
+    if FROZEN:
+        bundle = _app_bundle() if sys.platform == "darwin" else None
+        launcher = bundle or Path(sys.executable)
+        return launcher.name, launcher.parent
+    return ("Start Lab Helper.command" if sys.platform == "darwin" else "Start Lab Helper.bat"), ROOT
 
 
 def validate_local_base_url(value: str) -> str:
@@ -72,8 +105,8 @@ class Settings:
     base_url: str = field(default_factory=lambda: os.environ.get("AGENT_BASE_URL", "http://127.0.0.1:11434/v1"))
     runtime: str = field(default_factory=lambda: os.environ.get("AGENT_RUNTIME", "ollama"))
     agent_model: str = field(default_factory=lambda: os.environ.get("AGENT_MODEL", "qwen2.5:3b"))
-    models_dir: Path = field(default_factory=lambda: _env_path("MODELS_DIR", ROOT / "models"))
-    results_dir: Path = field(default_factory=lambda: _env_path("RESULTS_DIR", ROOT / "results"))
+    models_dir: Path = field(default_factory=lambda: _env_path("MODELS_DIR", lab_data_dir() / "models"))
+    results_dir: Path = field(default_factory=lambda: _env_path("RESULTS_DIR", lab_data_dir() / "results"))
     runtime_models_dir: Path = field(default_factory=lambda: _env_path("OLLAMA_MODELS", Path.home() / ".ollama" / "models"))
     runtime_install_dir: Path | None = field(default_factory=lambda: _env_path("RUNTIME_INSTALL_DIR", ROOT) if "RUNTIME_INSTALL_DIR" in os.environ else None)
     disk_budget_gb: float = field(default_factory=lambda: float(os.environ.get("DISK_BUDGET_GB", "10")))

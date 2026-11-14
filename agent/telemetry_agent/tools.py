@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 
 from . import collector, guardrails
+from .actions import ollama_app
 from .config import Settings, load_allow_list, load_error_catalog
 from .llm import ChatClient, LLMError
 from .system import GB, _tree_bytes, hardware_info, installation_footprint
@@ -125,8 +126,7 @@ class Toolbox:
     def _check_runtime(self, add):
         name = "ollama" if self.settings.runtime == "ollama" else "llama-server"
         found = shutil.which(name)
-        apps = (Path("/Applications/Ollama.app"), Path.home() / "Applications/Ollama.app")
-        installed = bool(found) or (self.settings.runtime == "ollama" and any(app.is_dir() for app in apps))
+        installed = bool(found) or (self.settings.runtime == "ollama" and bool(ollama_app()))
         return add(2, "runtime", installed, f"{name} detected" if installed else f"{name} not detected",
                    "Follow the manual runtime instructions for your OS. If installation requires admin or a security bypass, stop and ask the project team for a supported configuration.")
 

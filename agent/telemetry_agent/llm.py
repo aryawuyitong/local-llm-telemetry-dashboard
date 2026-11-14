@@ -248,7 +248,8 @@ class ChatClient:
     def metadata(self, runtime: str = "ollama") -> dict:
         """Best-effort version/digest/config facts, without copying paths or host IDs."""
         result = {"runtime_version": None, "model_digest": None, "quantization": None,
-                  "acceleration": "unknown", "other_models_resident": False, "context_tokens": None}
+                  "acceleration": "unknown", "gpu_resident_bytes": None,
+                  "other_models_resident": False, "context_tokens": None}
         if runtime != "ollama":
             return result
         for path in ("/api/version", "/api/tags", "/api/ps"):
@@ -285,6 +286,7 @@ class ChatClient:
                     vram = item.get("size_vram")
                     if (type(vram) in (int, float) and 0 <= vram <= 2**60 and math.isfinite(vram)):
                         result["acceleration"] = "gpu-assisted" if vram > 0 else "cpu"
+                        result["gpu_resident_bytes"] = vram
                     context = item.get("context_length")
                     if isinstance(context, int) and not isinstance(context, bool) and context > 0:
                         result["context_tokens"] = context

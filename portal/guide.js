@@ -76,10 +76,9 @@
       run ? cell('Memory in use', `${(run.peakMib / 1024).toFixed(1)} GB`, 'measured peak') : cell('Free memory', `${model.min_ram_gb} GB`, 'estimate'),
       run ? cell('Speed', `${run.tps} tok/s`, 'measured on ' + run.device) : cell('Speed', 'Not yet', 'you measure it'));
     const acts = el('div', undefined, 'lab-acts');
-    const download = el('a', `Download for ${mac ? 'Mac' : 'Windows'}`, 'button primary'); download.href = DOWNLOAD_URL; download.rel = 'noopener noreferrer';
-    // The download starts, then the start guide takes over, so nobody is left alone with a ZIP file.
-    if (mac) download.addEventListener('click', () => setTimeout(() => { location.hash = 'start'; }, 700));
-    acts.append(download, el('span', 'No Python? The launcher offers to add a private copy (about 25 MB).', 'lab-quiet'));
+    const start = el('a', 'Try a small browser model', 'button primary');
+    start.href = '#browser';
+    acts.append(start, el('span', 'These estimates are for the desktop Ollama models.', 'lab-quiet'));
     box.append(el('p', fit.verdict === 'yes' ? 'Yes.' : 'Yes, if you close some apps.', 'lab-verdict ' + fit.verdict), sub, cells, acts);
   }
   // When the helper serves this site, verdicts come from this laptop rather than a memory button.
@@ -117,7 +116,7 @@
   document.querySelectorAll('[data-mem]').forEach(b => b.addEventListener('click', () => setMemory(Number(b.dataset.mem))));
   renderModels(null);
   api.showLabFit = (list, runs) => { labFit = list; labRuns = runs || []; renderModels(null); };
-  $('#direct-command').textContent = directCommands(mac);
+  if ($('#direct-command')) $('#direct-command').textContent = directCommands(mac);
   if (!mac) document.querySelector('[data-platform="windows"]')?.click();  // the switch only exists on pages that still have the manual steps
 
   $('#err-form').addEventListener('submit', event => {
