@@ -89,7 +89,6 @@ if errorlevel 1 goto setup
 :check
 "%LAB_PYTHON%" -c "import sys, psutil; assert sys.version_info >= (3, 11)" >nul 2>nul
 if errorlevel 1 goto setup
-echo Windows support awaits physical-device validation.
 "%LAB_PYTHON%" -m telemetry_agent.helper
 if errorlevel 1 goto failed
 exit /b 0

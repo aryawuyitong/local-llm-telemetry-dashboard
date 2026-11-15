@@ -356,7 +356,7 @@ class LabLogic(unittest.TestCase):
         self.assertEqual([s["done"] for s in steps], [True, False, True, False, False])
         registered = actions.registered_commands()
         for step in steps:
-            if step["command"] and step["command"] != "Start menu > Ollama":
+            if step["command"]:
                 self.assertIn(step["command"], registered, step["id"])
             for key in ("what", "why", "does"):
                 self.assertTrue(step[key], f"{step['id']} has no {key}")

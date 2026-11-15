@@ -29,6 +29,34 @@ def cpu_model() -> str:
     return platform.processor() or platform.machine()
 
 
+def gpu_name() -> str | None:
+    """A read-only look for a dedicated graphics chip. Never installs or changes anything."""
+    smi = shutil.which("nvidia-smi")
+    if smi:
+        try:
+            out = subprocess.run([smi, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
+                                 capture_output=True, text=True, timeout=5).stdout.strip().splitlines()
+            if out:
+                name, _, mib = out[0].partition(",")
+                mib = mib.strip()
+                return f"{name.strip()} ({round(int(mib) / 1024)} GB)" if mib.isdigit() else name.strip()
+        except (OSError, subprocess.SubprocessError, ValueError):
+            pass
+    if platform.system() == "Windows":
+        try:
+            out = subprocess.run(["powershell", "-NoProfile", "-Command",
+                                  "(Get-CimInstance Win32_VideoController).Name"],
+                                 capture_output=True, text=True, timeout=8).stdout
+            names = [n.strip() for n in out.splitlines() if n.strip() and "basic" not in n.lower()]
+            # Prefer a dedicated chip (NVIDIA or AMD Radeon) over the built-in one.
+            dedicated = [n for n in names if any(k in n.lower() for k in ("nvidia", "radeon", "arc"))]
+            if dedicated or names:
+                return (dedicated or names)[0]
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return None
+
+
 def os_name() -> str:
     return {"Darwin": "macOS", "Windows": "Windows", "Linux": "Linux"}.get(platform.system(), platform.system())
 
@@ -55,6 +83,7 @@ def hardware_info(models_dir: Path) -> dict:
     disk = shutil.disk_usage(disk_path)
     arch = platform.machine().lower()
     apple_silicon = platform.system() == "Darwin" and arch in ("arm64", "aarch64")
+    gpu = None if apple_silicon else gpu_name()
     return {
         "os": os_name(),
         "os_version": os_version(),
@@ -65,11 +94,12 @@ def hardware_info(models_dir: Path) -> dict:
         "total_ram_gb": round(vm.total / GB, 1),
         "available_ram_gb": round(vm.available / GB, 1),
         "free_disk_gb": round(disk.free / GB, 1),
-        "gpu": "Apple GPU (Metal, shares system RAM)" if apple_silicon else "not detected (CPU inference assumed)",
+        "gpu": "Apple GPU (Metal, shares system RAM)" if apple_silicon else (gpu or "not detected (CPU inference assumed)"),
         "python": sys.version.split()[0],
         "running_as_admin": is_admin(),
-        "platform_validation": "Windows support is implemented but has not been verified on a physical Windows laptop.",
-        "gpu_detection": "Apple unified-memory capability inferred from OS/architecture; other GPU availability is unknown.",
+        "platform_validation": "Checked on a physical Windows 11 laptop (Nov 14, 2026): setup, first reply and benchmark.",
+        "gpu_detection": ("Apple unified-memory capability inferred from OS/architecture." if apple_silicon else
+                          "Graphics chip name read from nvidia-smi or Windows; Ollama decides whether it uses it."),
     }
 
 
