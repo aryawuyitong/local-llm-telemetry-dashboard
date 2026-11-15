@@ -293,5 +293,5 @@ def registered_commands() -> set[str]:
     for tag in [m["ollama_tag"] for m in load_allow_list()]:
         for cli in ("ollama", "$HOME/Applications/Ollama.app/Contents/Resources/ollama"):
             found |= {f"{cli} pull {tag}", f"{cli} rm {tag}", f'{cli} run {tag} "{HELLO}"', f"{cli} run {tag}", f"{cli} stop {tag}"}
-    found |= {"open -a Ollama", "ollama serve"}
+    found |= {"open -a Ollama", "ollama serve", "Start menu > Ollama"}
     return found | app_commands()

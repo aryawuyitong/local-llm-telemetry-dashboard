@@ -14,6 +14,19 @@ from telemetry_agent.config import Settings, local_urlopen, validate_local_base_
 from tests.test_helper import request
 
 
+
+def _can_symlink() -> bool:
+    import os
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            os.symlink(__file__, Path(tmp) / "probe")
+            return True
+        except OSError:
+            return False
+
+
+SYMLINKS = _can_symlink()
+
 class RuntimeURLTests(unittest.TestCase):
     def test_only_canonical_loopback_origins(self):
         cases = ["https://127.0.0.1:11434/v1", "http://example.com/v1", "http://127.0.0.1.evil.test/v1",
@@ -168,6 +181,7 @@ class FootprintTests(unittest.TestCase):
             self.assertIn(base_python, measure.call_args.args[1])
             self.assertTrue(result["verified"])
 
+    @unittest.skipUnless(SYMLINKS, "creating symlinks needs Developer Mode or admin on Windows")
     def test_venv_python_symlink_into_preexisting_base_does_not_fail_scan(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp).resolve()
@@ -179,6 +193,7 @@ class FootprintTests(unittest.TestCase):
             self.assertFalse(system._tree_bytes([project_env], [])[1])
             self.assertTrue(system._tree_bytes([project_env], [base_python])[1])
 
+    @unittest.skipUnless(SYMLINKS, "creating symlinks needs Developer Mode or admin on Windows")
     def test_venv_cfg_python_link_is_known_but_unrelated_external_link_still_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp).resolve()
