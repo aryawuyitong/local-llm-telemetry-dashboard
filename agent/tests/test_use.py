@@ -158,7 +158,8 @@ class Talk(unittest.TestCase):
         info = self.lab.use_info()
         self.assertEqual([m["name"] for m in info["models"]], ["qwen2.5:0.5b", "qwen2.5:3b"])
         self.assertIn("run qwen2.5:0.5b", info["models"][0]["command"])
-        self.assertIn("Start Lab Helper", info["launcher"])
+        self.assertIn(info["launcher"], ("Start Lab on Mac.command", "Start Lab on Windows.py"))
+        self.assertTrue((Path(info["folder"]) / info["launcher"]).is_file())  # the file really is in the folder it names
         self.assertTrue(info["folder"])
         self.assertEqual(info["starting_model"], "qwen2.5:3b")
 

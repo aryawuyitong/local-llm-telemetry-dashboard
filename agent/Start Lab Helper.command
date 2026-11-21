@@ -71,11 +71,27 @@ download_python() {
   echo "Python $PY_VERSION is ready in $(pwd)/.python."
 }
 
-if [ ! -x "$LAB_PYTHON" ]; then
-  BASE="$(find_python)" || { download_python; BASE="./.python/python/bin/python3"; }
-  echo "First run: creating the lab's private Python environment in this folder (about 20 seconds)."
-  echo "This only adds a .venv folder here. Delete the folder to undo it."
-  "$BASE" -m venv .venv && "$LAB_PYTHON" -m pip install --quiet --disable-pip-version-check -r requirements.txt || stop "Setup failed. Send the text in this window to the team."
+ready() { [ -x "$LAB_PYTHON" ] && "$LAB_PYTHON" -c "import sys, psutil; assert sys.version_info >= (3, 11)" >/dev/null 2>&1; }
+
+if ! ready; then
+  # Only one window sets up at a time; a second one waits instead of using a half-built environment.
+  # The lock is a folder, because creating one is a single step only one window can win.
+  said=""
+  until mkdir .setup-lock 2>/dev/null; do
+    if [ -n "$(find .setup-lock -maxdepth 0 -mmin +10 2>/dev/null)" ]; then rmdir .setup-lock 2>/dev/null; continue; fi
+    [ -n "$said" ] || { echo "Another Start window is setting up the lab. Waiting for it to finish..."; said=1; }
+    sleep 2
+  done
+  trap 'rmdir .setup-lock 2>/dev/null' EXIT
+  if ! ready; then  # another window may have finished while this one waited
+    rm -rf .venv     # a half-built one from an interrupted run
+    BASE="$(find_python)" || { download_python; BASE="./.python/python/bin/python3"; }
+    echo "First run: creating the lab's private Python environment in this folder (about 20 seconds)."
+    echo "This only adds a .venv folder here. Delete the folder to undo it."
+    # --no-cache-dir: pip keeps no copy elsewhere, so deleting .venv really undoes the setup.
+    "$BASE" -m venv .venv && "$LAB_PYTHON" -m pip install --quiet --disable-pip-version-check --no-cache-dir -r requirements.txt || stop "Setup failed. Send the text in this window to the team."
+  fi
+  rmdir .setup-lock 2>/dev/null; trap - EXIT
 fi
-"$LAB_PYTHON" -c "import sys, psutil; assert sys.version_info >= (3, 11)" >/dev/null 2>&1 || stop "This folder's .venv is missing Python 3.11+ or a dependency. Delete the .venv folder and double-click Start Lab Helper again."
+ready || stop "This folder's .venv is missing Python 3.11+ or a dependency. Delete the .venv folder and start the lab again."
 exec "$LAB_PYTHON" -m telemetry_agent.helper

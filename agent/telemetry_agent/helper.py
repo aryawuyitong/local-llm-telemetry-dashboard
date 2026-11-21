@@ -38,6 +38,41 @@ from .apps import APPS, app_context, app_path, install_command, manager as app_m
 from .agent import LabAgent
 from .config import ROOT, Settings
 from .recipes import load_recipes
+
+
+def _os_lock(handle):
+    """Wait for an exclusive lock on an open file; works on macOS, Linux and Windows."""
+    if os.name == "nt":
+        import msvcrt
+        handle.seek(0)
+        while True:
+            try:
+                msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+                return
+            except OSError:  # LK_LOCK gives up after about 10 seconds; keep waiting
+                time.sleep(0.2)
+    import fcntl
+    fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+
+
+def _os_unlock(handle):
+    if os.name == "nt":
+        import msvcrt
+        handle.seek(0)
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def start_again() -> tuple[str, str]:
+    """How to start the lab again on this laptop: the same top-of-folder start file the website's start guide uses,
+    because the Mac blocks a double-click on an unsigned file and Windows can block a downloaded .bat."""
+    if platform.system() == "Windows":
+        return ("Start Lab on Windows.py",
+                "Double-click **Start Lab on Windows**, the one whose Type is Python File, in the lab's folder")
+    return ("Start Lab on Mac.command",
+            "In Terminal, type `bash` and a space, drag **Start Lab on Mac.command** from the lab's folder into the window, and press Return. The lab's folder is")
 from .llm import ChatClient, LLMError
 from .router import route
 from .tools import Toolbox, _brief, validate_tool_args
@@ -176,15 +211,37 @@ class Lab:
         except (OSError, ValueError):
             return {"changes": []}
 
+    def _update_changes(self, edit):
+        """Read the log, apply edit(items) and write it back as one step. A thread lock covers this helper, and an
+        OS file lock covers a second helper started from the same folder, so neither can overwrite the other's entry.
+        The write goes to a temporary file first, so a crash never leaves half a log."""
+        path = self._changes_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with self._jobs_lock, open(path.with_name("log.lock"), "a+b") as handle:
+            _os_lock(handle)
+            try:
+                items = self.changes()["changes"]
+                result = edit(items)
+                tmp = path.with_name(f"log.{os.getpid()}.tmp")
+                tmp.write_text(json.dumps(items[-200:], indent=1), encoding="utf-8")
+                os.replace(tmp, path)
+                return result
+            finally:
+                _os_unlock(handle)
+
     def _log_change(self, what, undo_model=None, kind="change", undo_app=None):
         """kind: "change" altered the laptop; "check" and "assistant" only record what the agent did."""
-        with self._jobs_lock:
-            items = self.changes()["changes"]
-            items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": what, "undo_model": undo_model, "undo_app": undo_app,
-                          "undone": False, "kind": kind})
-            path = self._changes_path()
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(items[-200:], indent=1), encoding="utf-8")
+        self._update_changes(lambda items: items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": what, "undo_model": undo_model,
+                                                         "undo_app": undo_app, "undone": False, "kind": kind}))
+
+    def _mark_undone(self, key, value, what):
+        """Mark every still-open entry for this model or app as undone, and record the removal, against the log as it is now."""
+        def edit(items):
+            for change in items:
+                if change.get(key) == value and not change.get("undone"):
+                    change["undone"] = True
+            items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": what, "undo_model": None, "undo_app": None, "undone": False})
+        self._update_changes(edit)
 
     def show_model(self, model):
         """Open the model's file in Finder or File Explorer, and return where it is. The log never stores the path."""
@@ -351,11 +408,7 @@ class Lab:
                 raise RuntimeError(f"The uninstaller finished, but {ctx['name']} is still in {where_apps_go(ctx)}.")
         else:
             job["log"].append(f"{ctx['name']} was already gone.")
-        with self._jobs_lock:
-            for change in logged:
-                change["undone"] = True
-            items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": f"Removed {ctx['name']} (undo).", "undo_model": None, "undo_app": None, "undone": False})
-            self._changes_path().write_text(json.dumps(items[-200:], indent=1), encoding="utf-8")
+        self._mark_undone("undo_app", app, f"Removed {ctx['name']} (undo).")
         job["log"].append(f"Removed {ctx['name']}.")
         return {"app": app, "removed": True}
 
@@ -553,11 +606,7 @@ class Lab:
             if not logged:
                 raise RuntimeError("Only a model this lab downloaded can be removed here.")
         ChatClient(self.settings.base_url, model).delete_model(model)
-        with self._jobs_lock:
-            for change in logged:
-                change["undone"] = True
-            items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": f"Removed {model} (undo).", "undo_model": None, "undone": False})
-            self._changes_path().write_text(json.dumps(items[-200:], indent=1), encoding="utf-8")
+        self._mark_undone("undo_model", model, f"Removed {model} (undo).")
         job["log"].append(f"Removed {model}.")
         return {"model": model, "removed": True}
 
@@ -951,8 +1000,8 @@ class Lab:
         tags = rt["lab_models"]
         return {"models": [{"name": m, "about": self.allowed[m]["about"], "command": f"{cli} run {m}"} for m in tags],
                 "starting_model": self._agent_model(tags),
-                "launcher": "Start Lab Helper.command" if platform.system() == "Darwin" else "Start Lab Helper.bat",
-                "folder": str(ROOT), "running": rt["running"], "installed": rt["installed"]}
+                "launcher": start_again()[0],
+                "folder": str(ROOT.parent), "running": rt["running"], "installed": rt["installed"]}
 
     def start_talk(self, model, messages, context_tokens=4096, fair=False):
         """One reply from a chosen model, built up piece by piece. The conversation lives in the page and is never saved.

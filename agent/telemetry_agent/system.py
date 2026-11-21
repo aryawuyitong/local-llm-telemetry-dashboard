@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -29,13 +30,22 @@ def cpu_model() -> str:
     return platform.processor() or platform.machine()
 
 
+# Names Windows gives built-in graphics that share system memory, even when the brand also makes separate cards:
+# "AMD Radeon(TM) Graphics" and "Intel(R) Arc(TM) Graphics" sit in the processor; "Radeon RX 7600" and "Arc A770" don't.
+_DEDICATED = re.compile(r"nvidia|geforce|quadro|rtx|radeon.*\b(rx|pro)\b|\barc\b.*\b[ab]\d{3}", re.I)
+GPU_UNCHECKED = "unchecked"
+
+
 def gpu_name() -> str | None:
-    """A read-only look for a dedicated graphics chip. Never installs or changes anything."""
+    """A read-only look for a dedicated graphics chip. Never installs or changes anything.
+    Returns the chip's name, None when the laptop says it has none, or GPU_UNCHECKED when the lookup itself failed."""
+    looked = False
     smi = shutil.which("nvidia-smi")
     if smi:
         try:
-            out = subprocess.run([smi, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
-                                 capture_output=True, text=True, timeout=5).stdout.strip().splitlines()
+            out = subprocess.run([smi, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"], capture_output=True,
+                                 text=True, encoding="utf-8", errors="replace", timeout=5).stdout.strip().splitlines()
+            looked = True
             if out:
                 name, _, mib = out[0].partition(",")
                 mib = mib.strip()
@@ -44,16 +54,18 @@ def gpu_name() -> str | None:
             pass
     if platform.system() == "Windows":
         try:
-            out = subprocess.run(["powershell", "-NoProfile", "-Command",
-                                  "(Get-CimInstance Win32_VideoController).Name"],
-                                 capture_output=True, text=True, timeout=8).stdout
-            names = [n.strip() for n in out.splitlines() if n.strip() and "basic" not in n.lower()]
-            # Prefer a dedicated chip (NVIDIA or AMD Radeon) over the built-in one.
-            dedicated = [n for n in names if any(k in n.lower() for k in ("nvidia", "radeon", "arc"))]
-            if dedicated or names:
-                return (dedicated or names)[0]
-        except (OSError, subprocess.SubprocessError):
+            # Windows may print adapter names in a local code page; replace anything undecodable rather than fail.
+            result = subprocess.run(["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_VideoController).Name"],
+                                    capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=8)
+            if result.returncode == 0:
+                looked = True
+                names = [n.strip() for n in result.stdout.splitlines() if n.strip() and "basic" not in n.lower()]
+                dedicated = [n for n in names if _DEDICATED.search(n)]
+                if dedicated or names:
+                    return (dedicated or names)[0]
+        except (OSError, subprocess.SubprocessError, ValueError):
             pass
+        return None if looked else GPU_UNCHECKED
     return None
 
 
@@ -94,7 +106,9 @@ def hardware_info(models_dir: Path) -> dict:
         "total_ram_gb": round(vm.total / GB, 1),
         "available_ram_gb": round(vm.available / GB, 1),
         "free_disk_gb": round(disk.free / GB, 1),
-        "gpu": "Apple GPU (Metal, shares system RAM)" if apple_silicon else (gpu or "not detected (CPU inference assumed)"),
+        "gpu": ("Apple GPU (Metal, shares system RAM)" if apple_silicon else
+                "couldn't check (Windows didn't answer the graphics lookup)" if gpu == GPU_UNCHECKED else
+                (gpu or "not detected (CPU inference assumed)")),
         "python": sys.version.split()[0],
         "running_as_admin": is_admin(),
         "platform_validation": "Checked on a physical Windows 11 laptop (Nov 14, 2026): setup, first reply and benchmark.",

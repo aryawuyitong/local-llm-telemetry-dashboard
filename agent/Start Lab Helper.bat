@@ -83,7 +83,8 @@ echo First run: creating the lab's private Python environment in this folder.
 echo This only adds a .venv folder here. Delete the folder to undo it.
 %BASE% -m venv .venv
 if errorlevel 1 goto setup
-"%LAB_PYTHON%" -m pip install --quiet -r requirements.txt
+rem --no-cache-dir: pip keeps no copy elsewhere, so deleting .venv really undoes the setup.
+"%LAB_PYTHON%" -m pip install --quiet --disable-pip-version-check --no-cache-dir -r requirements.txt
 if errorlevel 1 goto setup
 
 :check

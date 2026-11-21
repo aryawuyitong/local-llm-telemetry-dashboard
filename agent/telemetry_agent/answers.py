@@ -215,10 +215,10 @@ def reopen(lab):
     rt = lab.runtime_state()
     if not rt["installed"]:
         return _reply("reopen", "checked", "There's nothing to reopen yet. Install Ollama first, using Set up.", ["Ollama's server"], links=[_link("Go to Set up", "deploy")])
-    launcher = "Start Lab Helper.command" if platform.system() == "Darwin" else "Start Lab Helper.bat"
+    from .helper import start_again  # the helper owns how the lab starts; imported here to avoid a cycle at load time
     cli = runtime_context(None, rt)["cli"]
     lines = ["Your models stay on this laptop, so nothing needs downloading again. Two things stop when you close them, and you restart them like this:",
-             f"1. {_how_ollama_starts(rt)}\n2. Double-click **{launcher}** in this folder: `{ROOT}`. It opens this site with a new private link."]
+             f"1. {_how_ollama_starts(rt)}\n2. {start_again()[1]}: `{ROOT.parent}`. It opens this site with a new private link."]
     if rt["lab_models"]:
         lines.append(f"You can also talk to a model without the lab. Once Ollama is open, type this in a terminal:\n\n```\n{cli} run {_smallest(lab, rt['lab_models'])}\n```")
     return _reply("reopen", "checked", "\n\n".join(lines), ["Ollama's server", "the lab's folder"], links=[_link("Use it", "use")])
