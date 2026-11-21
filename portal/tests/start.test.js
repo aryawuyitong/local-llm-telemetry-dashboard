@@ -66,3 +66,40 @@ test('starting works without knowing the folder name: bash, a space, drag the fi
   assert.match(start.todo[1], /Drag Start Lab on Mac/);
   assert.match(start.todo[2], /Return/);
 });
+
+test('one download, two guides: each system gets its own steps for the same ZIP', () => {
+  assert.deepEqual(Object.keys(S.GUIDES), ['mac', 'windows']);
+  assert.deepEqual(S.WIN_STEPS.map(s => s.id), ['download', 'unzip', 'python', 'start', 'first-run', 'opened']);
+  for (const s of S.WIN_STEPS) {
+    assert.ok(s.title && s.say.length && s.done && s.mock, s.id);
+    assert.ok(s.other.length >= 2 && s.other.every(o => o[0] && o[1]), s.id);
+  }
+  // Never a way round Windows' protection either.
+  assert.doesNotMatch(JSON.stringify(S.WIN_STEPS), /Run anyway|More info|Smart App Control (off|setting)|disable|turn it off|Unblock|Set-ExecutionPolicy/i);
+});
+
+test('the guide opens on the visitor\'s system, and anything else gets the Mac guide with a switch', () => {
+  assert.equal(S.pickSystem('Win32'), 'windows');
+  assert.equal(S.pickSystem('Windows'), 'windows');
+  assert.equal(S.pickSystem('MacIntel'), 'mac');
+  assert.equal(S.pickSystem('Linux x86_64'), 'mac');
+  assert.equal(S.pickSystem(''), 'mac');
+});
+
+test('the Windows start file is the one the guide names, opens with Python, and never elevates', () => {
+  const text = fs.readFileSync(path.join(repo, S.WIN_LAUNCHER), 'utf8');
+  assert.match(text, /telemetry_agent\.helper/);
+  assert.doesNotMatch(text, /runas|Set-ExecutionPolicy|shell=True|urlopen|Invoke-WebRequest/i);
+  const page = fs.readFileSync(path.join(__dirname, '..', 'start.js'), 'utf8');
+  for (const words of ["First run: creating the lab's private Python environment in this folder.", 'This only adds a .venv folder in the agent folder. Delete that folder to undo it.']) {
+    assert.ok(text.includes(words) && page.includes(words), words);
+  }
+});
+
+test('File Explorer\'s drawing lists the same items, folders first, with the Python start file marked by its Type', () => {
+  assert.deepEqual(S.WIN_FOLDER.map(f => f.file).sort(), S.FOLDER.map(([n]) => n).sort());
+  const firstFile = S.WIN_FOLDER.findIndex(f => f.type !== 'File folder');
+  assert.ok(S.WIN_FOLDER.slice(firstFile).every(f => f.type !== 'File folder'));
+  const starts = S.WIN_FOLDER.filter(f => f.shown === 'Start Lab on Windows');
+  assert.deepEqual(starts.map(f => f.type).sort(), ['Python File', 'Windows Batch File']);
+});

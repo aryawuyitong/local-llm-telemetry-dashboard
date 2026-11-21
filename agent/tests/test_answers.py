@@ -124,7 +124,9 @@ class CardsNotCommands(Base):
         self.assertIn("isn't on this laptop", got["text"])
 
     def test_apps(self):
-        with mock.patch("telemetry_agent.answers.app_path", return_value=None):
+        app_context = {"manager": {"installed": True}}
+        with mock.patch("telemetry_agent.answers.app_path", return_value=None), \
+             mock.patch("telemetry_agent.answers.app_context", return_value=app_context):
             self.assertEqual(self.ask("install vs code")["proposals"][0][1], {"app": "vscode"})
         got = self.ask("install slack")
         self.assertEqual(got["proposals"], [])

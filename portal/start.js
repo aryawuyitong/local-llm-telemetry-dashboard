@@ -1,6 +1,7 @@
-/* The start guide: from the Download button to the lab opening, one screen at a time, on a Mac.
-   Each step draws what the student will see, and "I see something else" opens the fixes for that step.
-   The Terminal lines are the launcher's own words (Start Lab on Mac.command and agent/Start Lab Helper.command). */
+/* The start guide: from the Download button to the lab opening, one screen at a time, on a Mac or on Windows.
+   Both use the same ZIP; only the start file differs. Each step draws what the student will see, and
+   "I see something else" opens the fixes for that step. Window text is the launchers' own words
+   (Start Lab on Mac.command, Start Lab on Windows.py and agent/Start Lab Helper.command). */
 (function (root) {
   'use strict';
 
@@ -11,6 +12,9 @@
     return found ? `${found[1]}-${found[2].replace(/\//g, '-')}` : 'local-llm-telemetry-dashboard-main';
   }
   const LAUNCHER = 'Start Lab on Mac.command';
+  const WIN_LAUNCHER = 'Start Lab on Windows.py';
+  // Which guide to open first. Anything that isn't Windows gets the Mac guide, with the switch to change it.
+  const pickSystem = platform => (/win/i.test(platform || '') ? 'windows' : 'mac');
   // Starts the file that was just downloaded. It never downloads and runs anything in one go.
   const startLine = downloadUrl => `bash ~/Downloads/${folderName(downloadUrl)}/"${LAUNCHER}"`;
 
@@ -49,10 +53,57 @@
       other: [['The strip is yellow and says "Website version"', 'That tab is the website, not the lab. Go back to Terminal, copy the line that starts with http://127.0.0.1, and paste it into your browser\'s address bar.'],
         ['The page says it cannot reach the Lab Helper', 'The Terminal window was closed, or the lab stopped. Do step 3 again. It opens a new private link.']] },
   ];
-  // Everything in the downloaded folder, in Finder's name order, so the drawing matches what students really see.
+  const WIN_STEPS = [
+    { id: 'download', title: 'Download the lab', mock: 'win-download',
+      say: ['Press the button. Your browser saves one ZIP file to your Downloads folder.', 'It holds the lab only: no model and no Ollama yet. You add those later, one approved step at a time.'],
+      done: 'It downloaded',
+      other: [['Nothing seems to happen', 'Open File Explorer and look in Downloads. Some browsers save the file without showing anything. If it isn\'t there, press the button again.'],
+        ['My browser asks whether to allow downloads from this site', 'Allowing it is fine. It only saves the one ZIP file.']] },
+    { id: 'unzip', title: 'Extract it', mock: 'extract',
+      say: ['Open File Explorer and go to Downloads. Right-click the ZIP file, choose Extract All, then press Extract.', 'A new folder opens. The lab can\'t start from inside the ZIP, so always use this extracted folder.'],
+      done: 'The new folder is open',
+      other: [['I double-clicked the ZIP and I see files', 'That\'s a look inside the ZIP, not a real folder, and the lab can\'t start from there. Go back to Downloads, right-click the ZIP and choose Extract All.'],
+        ['I can\'t find Extract All', 'Right-click the ZIP file itself, not the empty space next to it. On some laptops it\'s under Show more options.'],
+        ['My folder\'s name ends in a number, like "(1)"', 'You downloaded it more than once. That\'s fine: use the folder that just opened.']] },
+    { id: 'python', title: 'Find the Start file', mock: 'explorer',
+      say: ['In the new folder there are two files called Start Lab on Windows. Use the one whose Type says Python File.', 'If neither says Python File (for example it says PY File), this laptop doesn\'t have Python yet. Install it from python.org with the normal options, then look again: the Type changes to Python File.'],
+      why: 'Why Python? The lab is written in Python. The installer comes from the Python project and is signed, so Windows trusts it, and you only install it once.',
+      done: 'I found the Python File',
+      other: [['I can\'t see a Type column', 'In File Explorer, choose View, then Details. The Type column appears next to the names.'],
+        ['I see the names with .py and .bat at the end', 'That\'s fine: your laptop shows file endings. Use Start Lab on Windows.py.'],
+        ['The Python installer asks for an administrator password', 'Stop there. The lab never needs one. If this is a school or work laptop, ask whoever manages it to install Python for you.'],
+        ['I can\'t find Start Lab on Windows in the folder', 'You have an older copy of the lab, from before this file was added. Delete that folder, then go back to step 1 and download it again.']] },
+    { id: 'start', title: 'Double-click it', mock: 'win-start',
+      say: ['Double-click Start Lab on Windows, the one that is a Python File. A black window opens.'],
+      why: 'Why this file? Windows can block downloaded .bat files, but this one opens with Python, which Windows trusts. It changes no settings. It\'s plain text, so you can open it in Notepad and read it first.',
+      done: 'A black window opened',
+      other: [['Windows asks how to open the file, or it opens in Notepad', 'This laptop doesn\'t have Python yet. Go back a step and install it, then double-click the file again.'],
+        ['Windows blocked Start Lab on Windows.bat', 'That\'s the other file with the same name. Use the one whose Type says Python File.'],
+        ['The window says "The lab needs Python 3.11 or newer"', 'Your Python is too old for the lab. Install the latest one from python.org, then double-click the file again.'],
+        ['A blue "Windows protected your PC" box appears', 'Choose Don\'t run, and tell the team. Don\'t turn off any protection to get past it.']] },
+    { id: 'first-run', title: 'Let it set itself up', mock: 'win-run',
+      say: ['The first run takes about a minute. It makes a private Python environment inside the lab\'s agent folder and nothing anywhere else.', 'When it\'s ready, the black window prints a private link and your browser opens by itself.'],
+      done: 'My browser opened',
+      other: [['It says "Installing the lab\'s package failed" or "Setup failed"', 'Check your internet connection, delete the .venv folder inside the agent folder, then double-click the Start file again. If it fails twice, copy the window\'s text and send it to the team.'],
+        ['My browser didn\'t open', 'In the black window, select the line that starts with http://127.0.0.1, press Ctrl+C, and paste it into your browser\'s address bar. Don\'t share that link: it\'s private to your laptop.'],
+        ['Something else is on the screen', 'Paste what the window says into the box below.', 'error-box']] },
+    { id: 'opened', title: 'Check that it\'s the lab', mock: 'lab',
+      say: ['Look at the top of the new browser tab. The lab version has a green strip under the menu, and its menu starts with Set up.', 'Keep the black window open while you use the lab. Closing it stops the lab; your models and results stay on your laptop.'],
+      done: 'I see the green strip',
+      other: [['The strip is yellow and says "Website version"', 'That tab is the website, not the lab. In the black window, copy the line that starts with http://127.0.0.1 and paste it into your browser\'s address bar.'],
+        ['The page says it cannot reach the Lab Helper', 'The black window was closed, or the lab stopped. Double-click the Start file again. It opens a new private link.']] },
+  ];
+  // Everything in the downloaded folder, the way each system lists it, so the drawings match what students really see.
+  // Finder sorts by name; File Explorer puts folders first and hides file endings, so it shows each file's Type instead.
   const FOLDER = [['agent', true], ['benchmark_telemetry.py'], ['docs', true], ['evaluation', true], ['package.json'], ['portal', true],
-    ['README.md'], ['scripts', true], [LAUNCHER]];
-  const api = { STEPS, LAUNCHER, FOLDER, folderName, startLine };
+    ['README.md'], ['scripts', true], [LAUNCHER], ['Start Lab on Windows.bat'], [WIN_LAUNCHER]];
+  const TYPES = { py: 'Python File', json: 'JSON File', md: 'MD File', command: 'COMMAND File', bat: 'Windows Batch File' };
+  const WIN_FOLDER = [...FOLDER.filter(([, dir]) => dir), ...FOLDER.filter(([, dir]) => !dir)].map(([n, dir]) => {
+    const dot = n.lastIndexOf('.');
+    return dir ? { file: n, shown: n, type: 'File folder' } : { file: n, shown: n.slice(0, dot), type: TYPES[n.slice(dot + 1)] };
+  });
+  const GUIDES = { mac: { label: 'Mac', steps: STEPS }, windows: { label: 'Windows', steps: WIN_STEPS } };
+  const api = { STEPS, WIN_STEPS, GUIDES, LAUNCHER, WIN_LAUNCHER, FOLDER, WIN_FOLDER, folderName, startLine, pickSystem };
   root.LocalLabStart = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof document === 'undefined' || !document.getElementById('start-body')) return;
@@ -62,7 +113,14 @@
   const url = guide.DOWNLOAD_URL, folder = folderName(url), line = startLine(url);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const body = document.getElementById('start-body');
-  const state = { step: 0, finished: false, other: false, diagnosis: '' };
+  const store = { get: () => { try { return localStorage.getItem('lab-start-os'); } catch (_) { return null; } },
+    set: v => { try { localStorage.setItem('lab-start-os', v); } catch (_) { /* private window: just don't remember */ } } };
+  const saved = store.get();
+  const state = { os: GUIDES[saved] ? saved : pickSystem((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent),
+    step: 0, finished: false, other: false, diagnosis: '' };
+  const steps = () => GUIDES[state.os].steps;
+  const winBar = (title, inner, cls = '') => `<div class="mock win ${cls}" aria-hidden="true"><div class="mock-bar"><span>${esc(title)}</span><em>–</em><em>▢</em><em>✕</em></div>${inner}</div>`;
+  const winRow = (f, on) => `<div class="mock-row${on ? ' on' : ''}"><b class="mock-icon ${f.type === 'File folder' ? 'dir' : f.type === 'Python File' ? 'py' : 'file'}"></b>${esc(f.shown)}<small>${esc(f.type)}${on ? ' · this one' : ''}</small></div>`;
 
   const windowHtml = (title, inner, cls = '') => `<div class="mock ${cls}" aria-hidden="true"><div class="mock-bar"><i></i><i></i><i></i><span>${esc(title)}</span></div>${inner}</div>`;
   const MOCKS = {
@@ -83,6 +141,18 @@ Open this private launch link (do not share its token):
   <span class="hi">http://127.0.0.1:8765/#t=…</span></pre>`, 'dark'),
     lab: () => windowHtml('Local AI Lab · Set up', `<div class="mock-nav"><b>Set up</b><span>Catalog</span><span>Use it</span><span>Measure</span><span>My lab</span><span>Learn</span></div>
       <div class="mock-strip">Lab version, running on this laptop.</div><div class="mock-page">Run AI on <em>your laptop.</em></div>`),
+    'win-download': () => winBar('Downloads', `<div class="mock-row on"><b class="mock-icon zip"></b>${esc(folder)}<small>Compressed (zipped) Folder</small></div>`),
+    extract: () => winBar('Downloads', `<div class="mock-row on"><b class="mock-icon zip"></b>${esc(folder)}<small>Compressed (zipped) Folder</small></div>
+      <div class="mock-menu"><span>Open</span><span class="pick">Extract All…</span><span>Copy</span><span>Show more options</span></div>`),
+    explorer: () => winBar(folder, WIN_FOLDER.map(f => winRow(f, f.file === WIN_LAUNCHER)).join('')),
+    'win-start': () => winBar(folder, WIN_FOLDER.filter(f => f.file.startsWith('Start Lab on Windows')).map(f => winRow(f, f.file === WIN_LAUNCHER)).join('')
+      + '<p class="mock-hint">Double-click the Python File</p>'),
+    'win-run': () => winBar('Start Lab on Windows', `<pre class="mock-term">First run: creating the lab's private Python environment in this folder.
+This only adds a .venv folder in the agent folder. Delete that folder to undo it.
+Local AI Lab helper is running on this laptop only.
+Keep this window open. Nothing changes on your laptop until you approve a step.
+Open this private launch link (do not share its token):
+  <span class="hi">http://127.0.0.1:8765/#t=…</span></pre>`, 'dark'),
     dialog: () => `<div class="mock mock-dialog" aria-hidden="true"><div class="mock-warn">!</div><strong>“${esc(LAUNCHER)}” Not Opened</strong>
       <p>Apple could not verify “${esc(LAUNCHER)}” is free of malware that may harm your Mac or compromise your privacy.</p>
       <span class="mock-btn">Move to Trash</span><span class="mock-btn pick">Done</span></div>`,
@@ -91,29 +161,40 @@ Open this private launch link (do not share its token):
   function otherHtml(step) {
     return `<div class="start-other">${step.other.map(([q, a, extra]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p>
       ${extra === 'dialog' ? MOCKS.dialog() : ''}
-      ${extra === 'error-box' ? `<form id="start-err-form"><textarea id="start-err" rows="3" aria-label="What Terminal says" placeholder="Paste the text from Terminal here. It's checked in your browser and sent nowhere."></textarea>
+      ${extra === 'error-box' ? `<form id="start-err-form"><textarea id="start-err" rows="3" aria-label="What the window says" placeholder="Paste the text from the window here. It's checked in your browser and sent nowhere."></textarea>
         <button class="btn small" type="submit">Check it</button><div id="start-err-out" aria-live="polite">${state.diagnosis}</div></form>` : ''}</details>`).join('')}
       <p class="small muted">Still stuck? Copy what you see and <a href="https://github.com/aryawuyitong/local-llm-telemetry-dashboard/issues/new" target="_blank" rel="noopener noreferrer">tell the team</a>. Don't turn off any security setting to get past a step.</p></div>`;
   }
 
+  function osHtml() {
+    return `<div class="start-os" role="group" aria-label="Your computer"><span class="small muted">Your computer:</span>${Object.entries(GUIDES).map(([k, g]) =>
+      `<button class="btn small" data-start-os="${k}" aria-pressed="${k === state.os}">${g.label}</button>`).join('')}</div>`;
+  }
   function render() {
+    document.getElementById('start-eyebrow').textContent = `START GUIDE · ${GUIDES[state.os].label.toUpperCase()}`;
+    document.getElementById('start-intro').textContent = `${steps().length} short steps. Each one shows what you should see, so you always know whether it worked.`;
     if (state.finished) {
       body.innerHTML = `<div class="card start-done"><span class="badge ok">You're in</span><h2>The lab is running on your laptop.</h2>
         <p>Carry on in the lab's own tab. Start with <strong>Set up</strong>, step 1: press <strong>Run this check</strong>. Every step after that shows its command and its cost, and waits for your approval.</p>
-        <p><strong>To come back another day,</strong> open Ollama, then do step 3 again: in Terminal type <code class="cmd">bash</code> and a space, drag in Start Lab on Mac, and press Return.</p>
+        <p><strong>To come back another day,</strong> open Ollama, then ${state.os === 'windows'
+          ? 'double-click Start Lab on Windows (the Python File) in the lab\'s folder again.'
+          : 'do step 3 again: in Terminal type <code class="cmd">bash</code> and a space, drag in Start Lab on Mac, and press Return.'}</p>
         <div class="actions"><button class="btn" data-start-go="0">Go through the guide again</button><a class="btn" href="#learn">Learn how it works</a></div></div>`;
       return;
     }
-    const s = STEPS[state.step], n = STEPS.length;
-    body.innerHTML = `<ol class="start-dots" aria-label="Steps">${STEPS.map((x, i) => `<li><button class="${i === state.step ? 'on' : i < state.step ? 'done' : ''}" data-start-go="${i}" aria-current="${i === state.step ? 'step' : 'false'}"><b>${i < state.step ? '✓' : i + 1}</b><span>${esc(x.title)}</span></button></li>`).join('')}</ol>
+    const list = steps(), s = list[state.step], n = list.length;
+    body.innerHTML = `${osHtml()}<ol class="start-dots" aria-label="Steps">${list.map((x, i) => `<li><button class="${i === state.step ? 'on' : i < state.step ? 'done' : ''}" data-start-go="${i}" aria-current="${i === state.step ? 'step' : 'false'}"><b>${i < state.step ? '✓' : i + 1}</b><span>${esc(x.title)}</span></button></li>`).join('')}</ol>
       <div class="card start-step"><div class="start-text"><p class="small muted">Step ${state.step + 1} of ${n}</p><h2>${esc(s.title)}</h2>
           ${s.say.map(p => `<p>${esc(p)}</p>`).join('')}
-          ${s.id === 'download' ? `<p><a class="btn primary" href="${esc(url)}" rel="noopener noreferrer">Download for Mac</a></p>` : ''}
+          ${s.id === 'download' ? `<p><a class="btn primary" href="${esc(url)}" rel="noopener noreferrer">Download for ${GUIDES[state.os].label}</a></p>
+            <p class="small muted">It's the same ZIP for Mac and Windows; only the start file differs.</p>` : ''}
+          ${s.id === 'python' ? '<p><a class="btn small" href="https://www.python.org/downloads/" target="_blank" rel="noopener noreferrer">Get Python from python.org</a></p>' : ''}
           ${s.todo ? `<ol class="start-todo">${s.todo.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : ''}
-          ${s.id === 'start' ? `<details class="start-shortcut"><summary>Shortcut if your folder is in Downloads with its usual name</summary>
+          ${s.id === 'start' && state.os === 'mac' ? `<details class="start-shortcut"><summary>Shortcut if your folder is in Downloads with its usual name</summary>
             <p>Copy this line, paste it into Terminal, and press Return. If Terminal says "No such file or directory", use the three steps above instead.</p>
             <p><code class="cmd start-line">${esc(line)}</code> <button class="btn small" data-start-copy>Copy</button></p></details>
-            <p class="small muted">${esc(s.why)}</p>` : ''}
+            ` : ''}
+          ${s.why ? `<p class="small muted">${esc(s.why)}</p>` : ''}
           <div class="actions"><button class="btn primary" data-start-next>${esc(s.done)}</button>
             <button class="btn" data-start-other aria-expanded="${state.other}">I see something else</button>
             ${state.step ? '<button class="btn" data-start-back>Back</button>' : ''}</div></div>
@@ -121,13 +202,14 @@ Open this private launch link (do not share its token):
         ${state.other ? otherHtml(s) : ''}</div>`;
   }
 
-  function go(step) { Object.assign(state, { step: Math.max(0, Math.min(STEPS.length - 1, step)), finished: false, other: false, diagnosis: '' }); render(); body.querySelector('h2').scrollIntoView({ block: 'center' }); }
+  function go(step) { Object.assign(state, { step: Math.max(0, Math.min(steps().length - 1, step)), finished: false, other: false, diagnosis: '' }); render(); body.querySelector('h2').scrollIntoView({ block: 'center' }); }
 
   body.addEventListener('click', async e => {
     const t = e.target.closest('button');
     if (!t) return;
     const d = t.dataset;
-    if ('startNext' in d) { if (state.step === STEPS.length - 1) { state.finished = true; render(); } else go(state.step + 1); }
+    if (d.startOs) { state.os = d.startOs; store.set(d.startOs); go(0); }
+    else if ('startNext' in d) { if (state.step === steps().length - 1) { state.finished = true; render(); } else go(state.step + 1); }
     else if ('startBack' in d) go(state.step - 1);
     else if (d.startGo) go(+d.startGo);
     else if ('startOther' in d) { state.other = !state.other; render(); }
@@ -146,7 +228,5 @@ Open this private launch link (do not share its token):
         : '<p class="note small">That isn\'t on our list of known problems, so we won\'t guess. Copy it and tell the team.</p>';
     document.getElementById('start-err-out').innerHTML = state.diagnosis;
   });
-  // The Mac guide is the only one so far; say so plainly on other systems.
-  if (/Win/i.test(navigator.platform || navigator.userAgent)) document.getElementById('start-windows').hidden = false;
   render();
 })(typeof globalThis !== 'undefined' ? globalThis : this);
