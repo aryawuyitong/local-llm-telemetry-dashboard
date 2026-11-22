@@ -723,7 +723,8 @@ async function runPrediction() {
   $('#pr-result').innerHTML = '';
   await runStep(s, renderPredictStep);
   p.running = false;
-  if (s.result) { p.result = s.result; renderPrediction(s.result); s.done = false; renderPredictStep(); refreshStatus(); }
+  // loadResults: the "Your results" charts on this page show the new measurement without a reload.
+  if (s.result) { p.result = s.result; renderPrediction(s.result); s.done = false; renderPredictStep(); refreshStatus(); loadResults(); }
 }
 
 function compareBars(title, c, unit) {

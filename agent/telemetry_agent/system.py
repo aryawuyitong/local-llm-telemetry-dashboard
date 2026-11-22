@@ -25,6 +25,14 @@ def cpu_model() -> str:
             for line in Path("/proc/cpuinfo").read_text().splitlines():
                 if line.startswith("model name"):
                     return line.split(":", 1)[1].strip()
+        if system == "Windows":
+            # platform.processor() gives "Intel64 Family 6 Model 198 ..."; the registry has the name people know.
+            # Reading HKEY_LOCAL_MACHINE needs no administrator rights.
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0") as key:
+                name = " ".join(str(winreg.QueryValueEx(key, "ProcessorNameString")[0]).split())
+            if name:
+                return name
     except (OSError, subprocess.SubprocessError):
         pass
     return platform.processor() or platform.machine()

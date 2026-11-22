@@ -495,7 +495,7 @@ class Lab:
                 if job["status"] == "running" and job["action"] == action and job["args"] == args:
                     return copy.deepcopy(job)
             if not self._operation_lock.acquire(blocking=False):
-                raise Busy("Another lab operation is running. Wait before starting a new one.")
+                raise Busy("Another lab step is still running, in this tab or another one. Wait a few seconds, then try again.")
             job = {"id": uuid.uuid4().hex[:12], "action": action, "args": args, "status": "running",
                    "progress": None, "detail": "", "log": [], "result": None, "error": None, "diagnosis": None,
                    "warning": None}
@@ -1025,7 +1025,7 @@ class Lab:
         if model not in self.runtime_state()["lab_models"]:
             raise BadRequest(f"{model} isn't on this laptop yet. Download it first.")
         if not self._operation_lock.acquire(blocking=False):
-            raise Busy("Another lab operation is running. Wait for it to finish first.")
+            raise Busy("Another lab step is still running, in this tab or another one. Wait for it to finish, then try again.")
         talk = {"id": uuid.uuid4().hex[:12], "model": model, "status": "running", "text": "", "stop": False, "error": None, "flagged": False, "cut_off": False,
                 "ttft_s": None, "tps": None, "tokens": None, "prompt_tokens": None, "load_s": None, "seconds": None, "context_tokens": context_tokens}
         with self._jobs_lock:
