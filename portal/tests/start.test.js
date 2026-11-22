@@ -96,13 +96,16 @@ test('the Windows start file is the one the guide names, opens with Python, and 
   }
 });
 
-test('File Explorer\'s drawing lists the same items, folders first, with the Python start file marked by its Type', () => {
-  // Explorer also lists the dot items Finder hides: the same download, plus .github and .gitignore.
-  assert.deepEqual(S.WIN_FOLDER.map(f => f.file).filter(n => !n.startsWith('.')).sort(), S.FOLDER.map(([n]) => n).sort());
-  assert.deepEqual(S.WIN_FOLDER.filter(f => f.file.startsWith('.')).map(f => f.file).sort(), ['.github', '.gitignore']);
-  assert.ok(S.WIN_FOLDER.find(f => f.file === 'Start Lab on Mac.command').shown.endsWith('.command'));
-  const firstFile = S.WIN_FOLDER.findIndex(f => f.type !== 'File folder');
-  assert.ok(S.WIN_FOLDER.slice(firstFile).every(f => f.type !== 'File folder'));
-  const starts = S.WIN_FOLDER.filter(f => f.shown === 'Start Lab on Windows');
-  assert.deepEqual(starts.map(f => f.type).sort(), ['Python File', 'Windows Batch File']);
+test('Windows has one way in: a python line in PowerShell, with no .bat and no double-click to start', () => {
+  const url = 'https://github.com/aryawuyitong/local-llm-telemetry-dashboard/archive/refs/heads/main.zip';
+  const f = 'local-llm-telemetry-dashboard-main';
+  // Extract All puts the files one folder deeper, inside a folder with the same name.
+  assert.equal(S.winStartLine(url), `python "$HOME\\Downloads\\${f}\\${f}\\windows_set_up.py"`);
+  assert.ok(fs.existsSync(path.join(repo, S.WIN_LAUNCHER)));
+  assert.ok(!fs.readdirSync(repo).some(n => n.endsWith('.bat')));
+  const advice = JSON.stringify(S.WIN_STEPS);
+  assert.doesNotMatch(advice, /\.bat|Batch File|Start Lab on Windows/);
+  // The only double-clicks left open folders in step 2, never a start file.
+  assert.doesNotMatch(advice.replace(/Double-click that inner folder|Double-click it: the lab|I double-clicked the ZIP/g, ''), /double-click/i);
+  assert.doesNotMatch(advice, /Set-ExecutionPolicy|turn off Smart App Control/i);
 });

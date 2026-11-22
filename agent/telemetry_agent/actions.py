@@ -294,4 +294,6 @@ def registered_commands() -> set[str]:
         for cli in ("ollama", "$HOME/Applications/Ollama.app/Contents/Resources/ollama"):
             found |= {f"{cli} pull {tag}", f"{cli} rm {tag}", f'{cli} run {tag} "{HELLO}"', f"{cli} run {tag}", f"{cli} stop {tag}"}
     found |= {"open -a Ollama", "ollama serve", "Start menu > Ollama"}
+    # The one way to start the lab on Windows, for this copy of the lab (the start guide teaches the same line).
+    found.add(f'python "{Path(__file__).resolve().parents[2]}\\windows_set_up.py"')
     return found | app_commands()

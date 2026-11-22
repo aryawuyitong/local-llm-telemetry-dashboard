@@ -50,7 +50,7 @@
   <p class="mode-strip in-lab lab-only"><strong>Lab version, running on this laptop.</strong> You see every step first, and each one waits for your approval.</p>
 
   <main id="main" tabindex="-1">
-    <div id="connection-lost" class="notice lab-only" hidden role="alert"><strong>Cannot reach the Lab Helper.</strong> If its window says <strong>Stopped.</strong>, double-click <strong>Start Lab Helper</strong> again; it opens a new private link. Your downloaded models and saved results are still on this laptop.</div>
+    <div id="connection-lost" class="notice lab-only" hidden role="alert"><strong>Cannot reach the Lab Helper.</strong> If its window says <strong>Stopped.</strong>, start the lab again the way the <a href="#start">start guide</a> shows (on Windows, the <code>python</code> line in PowerShell); it opens a new private link. Your downloaded models and saved results are still on this laptop.</div>
     <section id="view-deploy" class="view" aria-labelledby="deploy-title">
       <div class="lab-only lab-app" id="lab-setup">
         <div class="lab-head"><div class="page-intro"><p class="eyebrow">SET UP</p><h1 id="setup-title">Run AI on <em>your laptop.</em></h1><p>Nothing changes until you approve it, and you can run any step yourself instead. Stop if a step asks for an admin password or a security change.</p></div>
@@ -102,7 +102,7 @@
         <details><summary>My laptop blocked the Start file</summary>
           <p>Laptops warn about downloaded files from developers they don't recognize. Don't turn off any security setting. Start it from a terminal instead, which changes no settings. It's a plain text file, so you can read it first.</p>
           <p><b>Mac:</b> follow <a href="#start">the start guide</a>. You type <code class="cmd">bash</code> and a space in Terminal, drag in the Start Lab on Mac file, and press Return.</p>
-          <p><b>Windows:</b> follow <a href="#start">the start guide</a>. Double-click <b>Start Lab on Windows</b>, the one whose Type says Python File. Windows can block the .bat file with the same name, but it lets the Python one run.</p>
+          <p><b>Windows:</b> follow <a href="#start">the start guide</a>. You paste one line into PowerShell, starting with <code class="cmd">python</code>, that runs <b>windows_set_up.py</b> from the lab's folder.</p>
           <p class="fine-print">If your school or company manages this laptop and it still won't run, stop and ask them.</p>
         </details>
         <details><summary>I've done this before: show the commands</summary>

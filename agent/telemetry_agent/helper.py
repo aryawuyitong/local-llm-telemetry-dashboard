@@ -65,14 +65,16 @@ def _os_unlock(handle):
         fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
-def start_again() -> tuple[str, str]:
-    """How to start the lab again on this laptop: the same top-of-folder start file the website's start guide uses,
-    because the Mac blocks a double-click on an unsigned file and Windows can block a downloaded .bat."""
+def start_again(folder=None) -> tuple[str, str]:
+    """How to start the lab again on this laptop: the same top-of-folder start file the website's start guide uses.
+    The Mac blocks a double-click on an unsigned file; on Windows the one way in is a python line in PowerShell."""
+    folder = str(folder or Path(__file__).resolve().parents[2])
     if platform.system() == "Windows":
-        return ("Start Lab on Windows.py",
-                "Double-click **Start Lab on Windows**, the one whose Type is Python File, in the lab's folder")
+        return ("windows_set_up.py",
+                f'In PowerShell, paste `python "{folder}\\windows_set_up.py"` and press Enter')
     return ("Start Lab on Mac.command",
-            "In Terminal, type `bash` and a space, drag **Start Lab on Mac.command** from the lab's folder into the window, and press Return. The lab's folder is")
+            f"In Terminal, type `bash` and a space, drag **Start Lab on Mac.command** from the lab's folder into the window, "
+            f"and press Return. The lab's folder is `{folder}`")
 from .llm import ChatClient, LLMError
 from .router import route
 from .tools import Toolbox, _brief, validate_tool_args

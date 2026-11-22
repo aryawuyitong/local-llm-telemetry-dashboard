@@ -1,8 +1,9 @@
-"""Start here on Windows: double-click this file.
+"""Start the lab on Windows. In PowerShell, run:
 
-It does the same as agent\\Start Lab Helper.bat, but as a plain Python file, so Windows Smart App
-Control lets it run (it opens with Python, which is signed, instead of an unsigned batch file).
-It is plain text, so you can read it before you run it.
+    python "<the lab's folder>\\windows_set_up.py"
+
+The website's start guide gives the exact line to copy. Running it with Python changes no security
+setting, and Windows Smart App Control allows it. It is plain text, so you can read it before you run it.
 
 On the first run it creates a private Python environment in agent\\.venv and installs the one
 package the lab needs (psutil). It installs nothing anywhere else, needs no administrator rights
@@ -21,7 +22,6 @@ LAB_PYTHON = AGENT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bi
 
 def stop(message: str) -> None:
     print(message)
-    input("Press Enter to close this window.")
     sys.exit(1)
 
 
@@ -56,7 +56,7 @@ def wait_for_setup_lock() -> Path:
 def main() -> None:
     if sys.version_info < (3, 11):
         stop(f"The lab needs Python 3.11 or newer, and this is Python {sys.version.split()[0]}.\n"
-             "Install the latest Python from https://www.python.org/downloads/ , then double-click this file again.")
+             "Install the latest Python from https://www.python.org/downloads/ , then run the start line again.")
     if not (AGENT / "requirements.txt").is_file():
         stop("The agent folder is missing. Download the lab again and unzip the whole folder.")
     os.chdir(AGENT)
@@ -69,16 +69,16 @@ def main() -> None:
                 print("First run: creating the lab's private Python environment in this folder.")
                 print("This only adds a .venv folder in the agent folder. Delete that folder to undo it.")
                 if subprocess.call([sys.executable, "-m", "venv", ".venv"]) != 0:
-                    stop("Setup failed. Double-click this file to try again. If it fails again, send this window's text to the team.")
+                    stop("Setup failed. Run the start line again. If it fails again, send this window's text to the team.")
                 # --no-cache-dir: pip keeps no copy elsewhere, so deleting agent\\.venv really undoes the setup.
                 if subprocess.call([str(LAB_PYTHON), "-m", "pip", "install", "--quiet", "--disable-pip-version-check",
                                     "--no-cache-dir", "-r", "requirements.txt"]) != 0:
-                    stop("Installing the lab's package failed. Check your internet connection, then double-click this file again.")
+                    stop("Installing the lab's package failed. Check your internet connection, then run the start line again.")
         finally:
             shutil.rmtree(lock, ignore_errors=True)
 
     if not ready():
-        stop("The agent\\.venv folder is missing Python 3.11+ or a package. Delete that folder, then double-click this file again.")
+        stop("The agent\\.venv folder is missing Python 3.11+ or a package. Delete that folder, then run the start line again.")
 
     try:
         code = subprocess.call([str(LAB_PYTHON), "-m", "telemetry_agent.helper"])

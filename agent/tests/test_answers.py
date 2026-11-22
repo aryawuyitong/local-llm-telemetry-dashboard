@@ -38,7 +38,8 @@ class WhatTheStudentAsked(Base):
     def test_the_four_questions_that_failed_on_nov_6(self):
         reopen = self.ask("I closed my laptop yesterday. How do I open this again and use my model?")
         self.assertEqual(reopen["id"], "reopen")
-        self.assertIn("Start Lab on", reopen["text"])  # the top-of-folder start file, as in the start guide
+        # the top-of-folder start file, as in the start guide
+        self.assertTrue("Start Lab on Mac" in reopen["text"] or "windows_set_up.py" in reopen["text"], reopen["text"])
         self.assertIn("ollama run qwen2.5:0.5b", reopen["text"])
         self.assertNotIn("python3 --version", reopen["text"])
 

@@ -45,7 +45,7 @@ class ChangesLog(unittest.TestCase):
 
 class StartAgain(unittest.TestCase):
     def test_each_system_is_told_the_start_file_the_start_guide_uses(self):
-        for system_name, launcher, words in (("Darwin", "Start Lab on Mac.command", "drag"), ("Windows", "Start Lab on Windows.py", "Python File")):
+        for system_name, launcher, words in (("Darwin", "Start Lab on Mac.command", "drag"), ("Windows", "windows_set_up.py", "PowerShell")):
             with mock.patch("telemetry_agent.helper.platform.system", return_value=system_name):
                 name, how = helper.start_again()
             self.assertEqual(name, launcher)
@@ -89,11 +89,12 @@ class Graphics(unittest.TestCase):
 
 class Launchers(unittest.TestCase):
     def test_setup_keeps_no_pip_cache_and_waits_for_another_window(self):
-        for name in ("../Start Lab on Windows.py", "Start Lab Helper.command"):
+        for name in ("../windows_set_up.py", "Start Lab Helper.command"):
             text = (AGENT / name).read_text(encoding="utf-8")
             self.assertIn("--no-cache-dir", text, name)
             self.assertIn(".setup-lock", text, name)
-        self.assertIn("--no-cache-dir", (AGENT / "Start Lab Helper.bat").read_text(encoding="utf-8"))
+        # No .bat launcher at the top or in agent/ (a .venv's own activate.bat doesn't count).
+        self.assertFalse(list(ROOT.parent.glob("*.bat")) + list(AGENT.glob("*.bat")), "Windows starts only with python windows_set_up.py")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 /* The start guide: from the Download button to the lab opening, one screen at a time, on a Mac or on Windows.
    Both use the same ZIP; only the start file differs. Each step draws what the student will see, and
    "I see something else" opens the fixes for that step. Window text is the launchers' own words
-   (Start Lab on Mac.command, Start Lab on Windows.py and agent/Start Lab Helper.command). */
+   (Start Lab on Mac.command, windows_set_up.py and agent/Start Lab Helper.command).
+   Windows has one way in: a python line pasted into PowerShell. There is no double-click or .bat path. */
 (function (root) {
   'use strict';
 
@@ -12,11 +13,16 @@
     return found ? `${found[1]}-${found[2].replace(/\//g, '-')}` : 'local-llm-telemetry-dashboard-main';
   }
   const LAUNCHER = 'Start Lab on Mac.command';
-  const WIN_LAUNCHER = 'Start Lab on Windows.py';
+  const WIN_LAUNCHER = 'windows_set_up.py';
   // Which guide to open first. Anything that isn't Windows gets the Mac guide, with the switch to change it.
   const pickSystem = platform => (/win/i.test(platform || '') ? 'windows' : 'mac');
   // Starts the file that was just downloaded. It never downloads and runs anything in one go.
   const startLine = downloadUrl => `bash ~/Downloads/${folderName(downloadUrl)}/"${LAUNCHER}"`;
+  // Windows: Extract All puts the files one folder deeper, inside a folder with the same name.
+  const winStartLine = downloadUrl => {
+    const f = folderName(downloadUrl);
+    return `python "$HOME\\Downloads\\${f}\\${f}\\${WIN_LAUNCHER}"`;
+  };
 
   const STEPS = [
     { id: 'download', title: 'Download the lab', mock: 'download',
@@ -66,56 +72,45 @@
         ['I double-clicked the ZIP and I see files', 'That\'s a look inside the ZIP, not a real folder, and the lab can\'t start from there. Go back to Downloads, right-click the ZIP and choose Extract All.'],
         ['I can\'t find Extract All', 'Right-click the ZIP file itself, not the empty space next to it. On some laptops it\'s under Show more options.'],
         ['My folder\'s name ends in a number, like "(1)"', 'You downloaded it more than once. That\'s fine: use the folder that just opened.']] },
-    { id: 'python', title: 'Find the Start file', mock: 'explorer',
-      say: ['In this folder there are two files called Start Lab on Windows. Use the one whose Type starts with Python: it says Python File, or Python Source File on some laptops. The other one is a Windows Batch File.', 'If neither starts with Python (for example it says PY File), this laptop doesn\'t have Python yet. Install it from python.org with the normal options, then look again: the Type changes to Python File.'],
+    { id: 'python', title: 'Open PowerShell and check Python', mock: 'ps-version',
+      say: ['Open PowerShell: press the Windows key, type PowerShell, and press Enter. A window with a blinking cursor opens.', 'Type python --version and press Enter. If it says Python 3.11 or newer, you\'re ready for the next step.'],
       why: 'Why Python? The lab is written in Python. The installer comes from the Python project and is signed, so Windows trusts it, and you only install it once.',
-      done: 'I found the Python File',
-      other: [['I can\'t see a Type column', 'In File Explorer, choose View, then Details. The Type column appears next to the names.'],
-        ['I see the names with .py and .bat at the end', 'That\'s fine: your laptop shows file endings. Use Start Lab on Windows.py.'],
-        ['The Python installer asks for an administrator password', 'Stop there. The lab never needs one. If this is a school or work laptop, ask whoever manages it to install Python for you.'],
-        ['I can\'t find Start Lab on Windows in the folder', 'First check you opened the inner folder from the last step: you should see agent, portal and README here. If you do and the file still isn\'t there, you have an older copy of the lab. Delete that folder, then go back to step 1 and download it again.']] },
-    { id: 'start', title: 'Double-click it', mock: 'win-start',
-      say: ['Double-click Start Lab on Windows, the one whose Type starts with Python. A black window opens.'],
-      why: 'Why this file? Windows can block downloaded .bat files, but this one opens with Python, which Windows trusts. It changes no settings. It\'s plain text, so you can open it in Notepad and read it first.',
-      done: 'A black window opened',
-      other: [['Windows asks how to open the file, or it opens in Notepad', 'This laptop doesn\'t have Python yet. Go back a step and install it, then double-click the file again.'],
-        ['Windows blocked Start Lab on Windows.bat', 'That\'s the other file with the same name. Use the one whose Type starts with Python.'],
-        ['The window says "The lab needs Python 3.11 or newer"', 'Your Python is too old for the lab. Install the latest one from python.org, then double-click the file again.'],
-        ['A blue "Windows protected your PC" box appears', 'Choose Don\'t run, and tell the team. Don\'t turn off any protection to get past it.']] },
+      done: 'It says Python 3.11 or newer',
+      other: [['It opens the Microsoft Store, or says "python is not recognized"', 'This laptop doesn\'t have Python yet. Get it from python.org. On the installer\'s first screen, tick "Add python.exe to PATH", untick "Use admin privileges when installing py.exe", then choose Install Now. When it finishes, close PowerShell, open a new one, and type python --version again.'],
+        ['It says Python 3.10 or older', 'Your Python is too old for the lab. Install the latest one from python.org the same way (tick "Add python.exe to PATH"), then open a new PowerShell and check again.'],
+        ['The Python installer asks for an administrator password', 'Stop there. The lab never needs one. Start the installer again and untick "Use admin privileges when installing py.exe". If it still asks, this is a managed laptop: ask whoever manages it to install Python for you.']] },
+    { id: 'start', title: 'Start it from PowerShell', mock: 'ps-start',
+      say: ['Copy the line below, paste it into PowerShell with Ctrl+V or a right-click, and press Enter.'],
+      why: 'Why PowerShell? Starting the lab with Python changes no security setting, so it works with Windows Smart App Control on. The file is plain text, so you can open windows_set_up.py in Notepad and read it first.',
+      done: 'I pressed Enter',
+      other: [['PowerShell says it can\'t open the file, or "No such file or directory"', 'Your folder has a different name or place (for example it ends in "(1)"). Type python and a space, drag windows_set_up.py from the inner folder in File Explorer into the PowerShell window, then press Enter.'],
+        ['I can\'t find windows_set_up.py in the folder', 'Check you opened the inner folder from step 2: you should see agent, portal and README there. If you do and the file still isn\'t there, you have an older copy of the lab. Delete that folder, then go back to step 1 and download it again.'],
+        ['It says "The lab needs Python 3.11 or newer"', 'Go back a step and install the latest Python from python.org, then open a new PowerShell and paste the line again.'],
+        ['I pasted a web address into PowerShell', 'Web addresses go in your browser\'s address bar. PowerShell only needs the line above, starting with python.']] },
     { id: 'first-run', title: 'Let it set itself up', mock: 'win-run',
-      say: ['The first run takes about a minute. It makes a private Python environment inside the lab\'s agent folder and nothing anywhere else.', 'When it\'s ready, the black window prints a private link and your browser opens by itself.'],
+      say: ['The first run takes about a minute. It makes a private Python environment inside the lab\'s agent folder and nothing anywhere else.', 'When it\'s ready, PowerShell prints a private link and your browser opens by itself.'],
       done: 'My browser opened',
-      other: [['It says "Installing the lab\'s package failed" or "Setup failed"', 'Check your internet connection, delete the .venv folder inside the agent folder, then double-click the Start file again. If it fails twice, copy the window\'s text and send it to the team.'],
-        ['My browser didn\'t open', 'In the black window, select the line that starts with http://127.0.0.1, press Ctrl+C, and paste it into your browser\'s address bar. Don\'t share that link: it\'s private to your laptop.'],
-        ['Something else is on the screen', 'Paste what the window says into the box below.', 'error-box']] },
+      other: [['It says "Installing the lab\'s package failed" or "Setup failed"', 'Check your internet connection, then paste the start line from step 4 again. If it fails twice, copy the PowerShell window\'s text and send it to the team.'],
+        ['My browser didn\'t open', 'In PowerShell, select the line that starts with http://127.0.0.1, press Ctrl+C, and paste it into your browser\'s address bar. Don\'t share that link: it\'s private to your laptop.'],
+        ['Something else is on the screen', 'Paste what PowerShell says into the box below.', 'error-box']] },
     { id: 'opened', title: 'Check that it\'s the lab', mock: 'lab',
-      say: ['Look at the top of the new browser tab. The lab version has a green strip under the menu, and its menu starts with Set up.', 'Keep the black window open while you use the lab. Closing it stops the lab; your models and results stay on your laptop.'],
+      say: ['Look at the top of the new browser tab. The lab version has a green strip under the menu, and its menu starts with Set up.', 'Keep the PowerShell window open while you use the lab. Closing it stops the lab; your models and results stay on your laptop.'],
       done: 'I see the green strip',
-      other: [['The strip is yellow and says "Website version"', 'That tab is the website, not the lab. In the black window, copy the line that starts with http://127.0.0.1 and paste it into your browser\'s address bar.'],
-        ['The page says it cannot reach the Lab Helper', 'The black window was closed, or the lab stopped. Double-click the Start file again. It opens a new private link.']] },
+      other: [['The strip is yellow and says "Website version"', 'That tab is the website, not the lab. In PowerShell, copy the line that starts with http://127.0.0.1 and paste it into your browser\'s address bar.'],
+        ['The page says it cannot reach the Lab Helper', 'The PowerShell window was closed, or the lab stopped. Open PowerShell and paste the start line from step 4 again. It opens a new private link.']] },
   ];
-  // Everything in the downloaded folder, the way each system lists it, so the drawings match what students really see.
-  // Finder sorts by name; File Explorer puts folders first and hides file endings, so it shows each file's Type instead.
+  // Everything in the downloaded folder, as Finder lists it, so the Mac drawing matches what students really see.
   const FOLDER = [['agent', true], ['benchmark_telemetry.py'], ['docs', true], ['evaluation', true], ['package.json'], ['portal', true],
-    ['README.md'], ['scripts', true], [LAUNCHER], ['Start Lab on Windows.bat'], [WIN_LAUNCHER]];
-  const TYPES = { py: 'Python File', json: 'JSON File', md: 'MD File', command: 'COMMAND File', bat: 'Windows Batch File', gitignore: 'GITIGNORE File' };
-  // Windows only hides the endings of file types it knows, so .command and .gitignore keep theirs.
-  const KNOWN = new Set(['py', 'json', 'md', 'bat']);
-  // File Explorer also shows the two items whose names start with a dot, which Finder hides; they sort first.
-  const WIN_ITEMS = [['.github', true], ['.gitignore'], ...FOLDER];
-  const WIN_FOLDER = [...WIN_ITEMS.filter(([, dir]) => dir), ...WIN_ITEMS.filter(([, dir]) => !dir)].map(([n, dir]) => {
-    const dot = n.lastIndexOf('.'), ext = n.slice(dot + 1);
-    return dir ? { file: n, shown: n, type: 'File folder' } : { file: n, shown: KNOWN.has(ext) ? n.slice(0, dot) : n, type: TYPES[ext] };
-  });
+    ['README.md'], ['scripts', true], [LAUNCHER], [WIN_LAUNCHER]];
   const GUIDES = { mac: { label: 'Mac', steps: STEPS }, windows: { label: 'Windows', steps: WIN_STEPS } };
-  const api = { STEPS, WIN_STEPS, GUIDES, LAUNCHER, WIN_LAUNCHER, FOLDER, WIN_FOLDER, folderName, startLine, pickSystem };
+  const api = { STEPS, WIN_STEPS, GUIDES, LAUNCHER, WIN_LAUNCHER, FOLDER, folderName, startLine, winStartLine, pickSystem };
   root.LocalLabStart = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof document === 'undefined' || !document.getElementById('start-body')) return;
 
   // ---------------------------------------------------------------- the page
   const guide = root.LocalLabGuide, errors = root.LocalLabCatalog.errors;
-  const url = guide.DOWNLOAD_URL, folder = folderName(url), line = startLine(url);
+  const url = guide.DOWNLOAD_URL, folder = folderName(url), line = startLine(url), winLine = winStartLine(url);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const body = document.getElementById('start-body');
   const store = { get: () => { try { return localStorage.getItem('lab-start-os'); } catch (_) { return null; } },
@@ -125,7 +120,6 @@
     step: 0, finished: false, other: false, diagnosis: '' };
   const steps = () => GUIDES[state.os].steps;
   const winBar = (title, inner, cls = '') => `<div class="mock win ${cls}" aria-hidden="true"><div class="mock-bar"><span>${esc(title)}</span><em>–</em><em>▢</em><em>✕</em></div>${inner}</div>`;
-  const winRow = (f, on) => `<div class="mock-row${on ? ' on' : ''}"><b class="mock-icon ${f.type === 'File folder' ? 'dir' : f.type === 'Python File' ? 'py' : 'file'}"></b>${esc(f.shown)}<small>${esc(f.type)}${on ? ' · this one' : ''}</small></div>`;
 
   const windowHtml = (title, inner, cls = '') => `<div class="mock ${cls}" aria-hidden="true"><div class="mock-bar"><i></i><i></i><i></i><span>${esc(title)}</span></div>${inner}</div>`;
   const MOCKS = {
@@ -150,11 +144,11 @@ Open this private launch link (do not share its token):
     extract: () => winBar('Downloads', `<div class="mock-row on"><b class="mock-icon zip"></b>${esc(folder)}<small>Compressed (zipped) Folder</small></div>
       <div class="mock-menu"><span>Open</span><span class="pick">Extract All…</span><span>Copy</span><span>Show more options</span></div>`)
       + winBar(folder, `<div class="mock-row on"><b class="mock-icon dir"></b>${esc(folder)}<small>File folder · open this one</small></div>`),
-    explorer: () => winBar(folder, WIN_FOLDER.map(f => winRow(f, f.file === WIN_LAUNCHER)).join('')
-      + '<p class="mock-hint">The Type words can differ a little on your laptop, for example Python Source File. Look for the word Python.</p>'),
-    'win-start': () => winBar(folder, WIN_FOLDER.filter(f => f.file.startsWith('Start Lab on Windows')).map(f => winRow(f, f.file === WIN_LAUNCHER)).join('')
-      + '<p class="mock-hint">Double-click the Python File</p>'),
-    'win-run': () => winBar('Start Lab on Windows', `<pre class="mock-term">First run: creating the lab's private Python environment in this folder.
+    'ps-version': () => winBar('Windows PowerShell', `<pre class="mock-term"><span class="dim">PS C:\\Users\\you&gt;</span> python --version
+Python 3.13.1
+<span class="dim">PS C:\\Users\\you&gt;</span><span class="mock-caret"></span></pre>`, 'dark'),
+    'ps-start': () => winBar('Windows PowerShell', `<pre class="mock-term"><span class="dim">PS C:\\Users\\you&gt;</span> ${esc(winLine)}<span class="mock-caret"></span></pre>`, 'dark'),
+    'win-run': () => winBar('Windows PowerShell', `<pre class="mock-term">First run: creating the lab's private Python environment in this folder.
 This only adds a .venv folder in the agent folder. Delete that folder to undo it.
 Local AI Lab helper is running on this laptop only.
 Keep this window open. Nothing changes on your laptop until you approve a step.
@@ -184,7 +178,7 @@ Open this private launch link (do not share its token):
       body.innerHTML = `<div class="card start-done"><span class="badge ok">You're in</span><h2>The lab is running on your laptop.</h2>
         <p>Carry on in the lab's own tab. Start with <strong>Set up</strong>, step 1: press <strong>Run this check</strong>. Every step after that shows its command and its cost, and waits for your approval.</p>
         <p><strong>To come back another day,</strong> open Ollama, then ${state.os === 'windows'
-          ? 'double-click Start Lab on Windows (the Python File) in the lab\'s folder again.'
+          ? 'open PowerShell and do step 4 again: paste the start line and press Enter.'
           : 'do step 3 again: in Terminal type <code class="cmd">bash</code> and a space, drag in Start Lab on Mac, and press Return.'}</p>
         <div class="actions"><button class="btn" data-start-go="0">Go through the guide again</button><a class="btn" href="#learn">Learn how it works</a></div></div>`;
       return;
@@ -196,6 +190,8 @@ Open this private launch link (do not share its token):
           ${s.id === 'download' ? `<p><a class="btn primary" href="${esc(url)}" rel="noopener noreferrer">Download for ${GUIDES[state.os].label}</a></p>
             <p class="small muted">It's the same ZIP for Mac and Windows; only the start file differs.</p>` : ''}
           ${s.id === 'python' ? '<p><a class="btn small" href="https://www.python.org/downloads/" target="_blank" rel="noopener noreferrer">Get Python from python.org</a></p>' : ''}
+          ${s.id === 'start' && state.os === 'windows' ? `<p><code class="cmd start-line">${esc(winLine)}</code> <button class="btn small" data-start-copy>Copy</button></p>
+            <p class="small muted">This line is for the lab in Downloads with its usual name. If PowerShell can't find the file, open "I see something else".</p>` : ''}
           ${s.todo ? `<ol class="start-todo">${s.todo.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : ''}
           ${s.id === 'start' && state.os === 'mac' ? `<details class="start-shortcut"><summary>Shortcut if your folder is in Downloads with its usual name</summary>
             <p>Copy this line, paste it into Terminal, and press Return. If Terminal says "No such file or directory", use the three steps above instead.</p>
@@ -221,7 +217,7 @@ Open this private launch link (do not share its token):
     else if (d.startGo) go(+d.startGo);
     else if ('startOther' in d) { state.other = !state.other; render(); }
     else if ('startCopy' in d) {
-      try { await navigator.clipboard.writeText(line); t.textContent = 'Copied'; } catch (_) { t.textContent = 'Select the line to copy it'; }
+      try { await navigator.clipboard.writeText(state.os === 'windows' ? winLine : line); t.textContent = 'Copied'; } catch (_) { t.textContent = 'Select the line to copy it'; }
       setTimeout(() => { t.textContent = 'Copy'; }, 1800);
     }
   });

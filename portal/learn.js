@@ -29,7 +29,7 @@
     { name: 'You', where: 'Your browser tab', does: 'You type a question. The page itself comes from your own laptop: its address starts with 127.0.0.1, which means "this computer".',
       detail: 'The public website only teaches. It never connects to your laptop.' },
     { name: 'Lab Helper', where: 'A small program on your laptop', does: 'It checks the request came from your own page, removes anything that looks like a password or key, and passes your question on.',
-      detail: 'You start it by double-clicking Start Lab Helper. It only runs steps you approve, and it never runs a command that a model wrote.' },
+      detail: 'You start it from Terminal on a Mac or PowerShell on Windows, as the start guide shows. It only runs steps you approve, and it never runs a command that a model wrote.' },
     { name: 'Ollama', where: 'The engine, on your laptop', does: 'It loads the model\'s file from disk into memory, then runs it. The first question after a break waits for that loading.',
       detail: 'It listens only on your laptop, at port 11434. After a few quiet minutes it frees the memory again.' },
     { name: 'The model', where: 'A file of learned numbers', does: 'It splits your question into tokens, which are pieces of words. Then it works out which token is likely to come next, adds it, and repeats.',
