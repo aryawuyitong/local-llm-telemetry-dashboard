@@ -98,10 +98,14 @@
   // Finder sorts by name; File Explorer puts folders first and hides file endings, so it shows each file's Type instead.
   const FOLDER = [['agent', true], ['benchmark_telemetry.py'], ['docs', true], ['evaluation', true], ['package.json'], ['portal', true],
     ['README.md'], ['scripts', true], [LAUNCHER], ['Start Lab on Windows.bat'], [WIN_LAUNCHER]];
-  const TYPES = { py: 'Python File', json: 'JSON File', md: 'MD File', command: 'COMMAND File', bat: 'Windows Batch File' };
-  const WIN_FOLDER = [...FOLDER.filter(([, dir]) => dir), ...FOLDER.filter(([, dir]) => !dir)].map(([n, dir]) => {
-    const dot = n.lastIndexOf('.');
-    return dir ? { file: n, shown: n, type: 'File folder' } : { file: n, shown: n.slice(0, dot), type: TYPES[n.slice(dot + 1)] };
+  const TYPES = { py: 'Python File', json: 'JSON File', md: 'MD File', command: 'COMMAND File', bat: 'Windows Batch File', gitignore: 'GITIGNORE File' };
+  // Windows only hides the endings of file types it knows, so .command and .gitignore keep theirs.
+  const KNOWN = new Set(['py', 'json', 'md', 'bat']);
+  // File Explorer also shows the two items whose names start with a dot, which Finder hides; they sort first.
+  const WIN_ITEMS = [['.github', true], ['.gitignore'], ...FOLDER];
+  const WIN_FOLDER = [...WIN_ITEMS.filter(([, dir]) => dir), ...WIN_ITEMS.filter(([, dir]) => !dir)].map(([n, dir]) => {
+    const dot = n.lastIndexOf('.'), ext = n.slice(dot + 1);
+    return dir ? { file: n, shown: n, type: 'File folder' } : { file: n, shown: KNOWN.has(ext) ? n.slice(0, dot) : n, type: TYPES[ext] };
   });
   const GUIDES = { mac: { label: 'Mac', steps: STEPS }, windows: { label: 'Windows', steps: WIN_STEPS } };
   const api = { STEPS, WIN_STEPS, GUIDES, LAUNCHER, WIN_LAUNCHER, FOLDER, WIN_FOLDER, folderName, startLine, pickSystem };
@@ -146,7 +150,8 @@ Open this private launch link (do not share its token):
     extract: () => winBar('Downloads', `<div class="mock-row on"><b class="mock-icon zip"></b>${esc(folder)}<small>Compressed (zipped) Folder</small></div>
       <div class="mock-menu"><span>Open</span><span class="pick">Extract All…</span><span>Copy</span><span>Show more options</span></div>`)
       + winBar(folder, `<div class="mock-row on"><b class="mock-icon dir"></b>${esc(folder)}<small>File folder · open this one</small></div>`),
-    explorer: () => winBar(folder, WIN_FOLDER.map(f => winRow(f, f.file === WIN_LAUNCHER)).join('')),
+    explorer: () => winBar(folder, WIN_FOLDER.map(f => winRow(f, f.file === WIN_LAUNCHER)).join('')
+      + '<p class="mock-hint">The Type words can differ a little on your laptop, for example Python Source File. Look for the word Python.</p>'),
     'win-start': () => winBar(folder, WIN_FOLDER.filter(f => f.file.startsWith('Start Lab on Windows')).map(f => winRow(f, f.file === WIN_LAUNCHER)).join('')
       + '<p class="mock-hint">Double-click the Python File</p>'),
     'win-run': () => winBar('Start Lab on Windows', `<pre class="mock-term">First run: creating the lab's private Python environment in this folder.

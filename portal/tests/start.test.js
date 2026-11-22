@@ -97,7 +97,10 @@ test('the Windows start file is the one the guide names, opens with Python, and 
 });
 
 test('File Explorer\'s drawing lists the same items, folders first, with the Python start file marked by its Type', () => {
-  assert.deepEqual(S.WIN_FOLDER.map(f => f.file).sort(), S.FOLDER.map(([n]) => n).sort());
+  // Explorer also lists the dot items Finder hides: the same download, plus .github and .gitignore.
+  assert.deepEqual(S.WIN_FOLDER.map(f => f.file).filter(n => !n.startsWith('.')).sort(), S.FOLDER.map(([n]) => n).sort());
+  assert.deepEqual(S.WIN_FOLDER.filter(f => f.file.startsWith('.')).map(f => f.file).sort(), ['.github', '.gitignore']);
+  assert.ok(S.WIN_FOLDER.find(f => f.file === 'Start Lab on Mac.command').shown.endsWith('.command'));
   const firstFile = S.WIN_FOLDER.findIndex(f => f.type !== 'File folder');
   assert.ok(S.WIN_FOLDER.slice(firstFile).every(f => f.type !== 'File folder'));
   const starts = S.WIN_FOLDER.filter(f => f.shown === 'Start Lab on Windows');
