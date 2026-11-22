@@ -723,7 +723,8 @@ async function runPrediction() {
   $('#pr-result').innerHTML = '';
   await runStep(s, renderPredictStep);
   p.running = false;
-  if (s.result) { p.result = s.result; renderPrediction(s.result); s.done = false; renderPredictStep(); refreshStatus(); }
+  // loadResults: the "Your results" charts on this page show the new measurement without a reload.
+  if (s.result) { p.result = s.result; renderPrediction(s.result); s.done = false; renderPredictStep(); refreshStatus(); loadResults(); }
 }
 
 function compareBars(title, c, unit) {
@@ -1058,8 +1059,11 @@ async function renderUse() {
     <h2>Coming back tomorrow</h2>
     <div class="card"><p>Your models stay on this laptop, so you won't download anything again. Ollama and the Lab Helper stop when you close them, so restart both:</p>
       <ol><li>Open the Ollama app. On a Mac it's in Applications; on Windows it's in the Start menu.</li>
-        <li>Double-click <strong>${esc(info.launcher)}</strong> in this folder. It opens this site with a new private link.
-          <div><code class="cmd">${esc(info.folder)}</code> <button class="btn small" data-copy-command="${esc(info.folder)}">Copy location</button></div></li></ol>
+        ${/\.py$/.test(info.launcher) ? (() => { const cmd = `python "${info.folder}\\${info.launcher}"`;
+          return `<li>Open PowerShell, paste this line and press Enter. It opens this site with a new private link.
+          <div><code class="cmd">${esc(cmd)}</code> <button class="btn small" data-copy-command="${esc(cmd)}">Copy command</button></div></li></ol>`; })()
+          : `<li>In Terminal, type <code class="cmd">bash</code> and a space, drag <strong>${esc(info.launcher)}</strong> from this folder into the window, and press Return. It opens this site with a new private link.
+          <div><code class="cmd">${esc(info.folder)}</code> <button class="btn small" data-copy-command="${esc(info.folder)}">Copy location</button></div></li></ol>`}
       <p class="mt">You can also talk to a model without this site. With Ollama open, type this in a terminal, and type <code>/bye</code> to finish:</p>
       ${info.models.map(m => `<div><code class="cmd">${esc(m.command)}</code> <button class="btn small" data-copy-command="${esc(m.command)}">Copy command</button></div>`).join('')}
     </div>`;

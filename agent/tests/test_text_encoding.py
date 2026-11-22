@@ -59,7 +59,7 @@ class TextEncoding(unittest.TestCase):
             with self.subTest(version=version), mock.patch.object(tools.sys, 'version_info', version):
                 report = toolbox.check_install(up_to_step=1)
                 self.assertIs(report['steps'][0]['ok'], expected)
-        for name in ('Start Lab Helper.command', 'Start Lab Helper.bat'):
+        for name in ('Start Lab Helper.command', '../windows_set_up.py'):
             source = (PROJECT / 'agent' / name).read_text(encoding='utf-8')
             self.assertIn('sys.version_info >= (3, 11)', source)
             self.assertNotIn('Python 3.9+', source)

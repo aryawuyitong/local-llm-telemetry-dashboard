@@ -38,6 +38,43 @@ from .apps import APPS, app_context, app_path, install_command, manager as app_m
 from .agent import LabAgent
 from .config import ROOT, Settings
 from .recipes import load_recipes
+
+
+def _os_lock(handle):
+    """Wait for an exclusive lock on an open file; works on macOS, Linux and Windows."""
+    if os.name == "nt":
+        import msvcrt
+        handle.seek(0)
+        while True:
+            try:
+                msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+                return
+            except OSError:  # LK_LOCK gives up after about 10 seconds; keep waiting
+                time.sleep(0.2)
+    import fcntl
+    fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+
+
+def _os_unlock(handle):
+    if os.name == "nt":
+        import msvcrt
+        handle.seek(0)
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def start_again(folder=None) -> tuple[str, str]:
+    """How to start the lab again on this laptop: the same top-of-folder start file the website's start guide uses.
+    The Mac blocks a double-click on an unsigned file; on Windows the one way in is a python line in PowerShell."""
+    folder = str(folder or Path(__file__).resolve().parents[2])
+    if platform.system() == "Windows":
+        return ("windows_set_up.py",
+                f'In PowerShell, paste `python "{folder}\\windows_set_up.py"` and press Enter')
+    return ("Start Lab on Mac.command",
+            f"In Terminal, type `bash` and a space, drag **Start Lab on Mac.command** from the lab's folder into the window, "
+            f"and press Return. The lab's folder is `{folder}`")
 from .llm import ChatClient, LLMError
 from .router import route
 from .tools import Toolbox, _brief, validate_tool_args
@@ -117,7 +154,7 @@ class Lab:
         return {"runtime": runtime, "installation_mode": "guided",
                 "assistant": {"ready": bool(model), "model": model, "wanted_model": self.settings.agent_model,
                               "guardrails_required": True, "comparison_mode": "Use the isolated text-only evaluation harness."},
-                "platform_validation": "Windows implementation has automated tests, but no physical Windows validation is claimed.",
+                "platform_validation": "Checked on a physical Windows 11 laptop (Nov 14, 2026): setup, first reply and benchmark.",
                 "goals": {k: {"label": g["label"], "detail": g["detail"]} for k, g in GOALS.items()}}
 
     def runtime_state(self):
@@ -176,15 +213,37 @@ class Lab:
         except (OSError, ValueError):
             return {"changes": []}
 
+    def _update_changes(self, edit):
+        """Read the log, apply edit(items) and write it back as one step. A thread lock covers this helper, and an
+        OS file lock covers a second helper started from the same folder, so neither can overwrite the other's entry.
+        The write goes to a temporary file first, so a crash never leaves half a log."""
+        path = self._changes_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with self._jobs_lock, open(path.with_name("log.lock"), "a+b") as handle:
+            _os_lock(handle)
+            try:
+                items = self.changes()["changes"]
+                result = edit(items)
+                tmp = path.with_name(f"log.{os.getpid()}.tmp")
+                tmp.write_text(json.dumps(items[-200:], indent=1), encoding="utf-8")
+                os.replace(tmp, path)
+                return result
+            finally:
+                _os_unlock(handle)
+
     def _log_change(self, what, undo_model=None, kind="change", undo_app=None):
         """kind: "change" altered the laptop; "check" and "assistant" only record what the agent did."""
-        with self._jobs_lock:
-            items = self.changes()["changes"]
-            items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": what, "undo_model": undo_model, "undo_app": undo_app,
-                          "undone": False, "kind": kind})
-            path = self._changes_path()
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(items[-200:], indent=1), encoding="utf-8")
+        self._update_changes(lambda items: items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": what, "undo_model": undo_model,
+                                                         "undo_app": undo_app, "undone": False, "kind": kind}))
+
+    def _mark_undone(self, key, value, what):
+        """Mark every still-open entry for this model or app as undone, and record the removal, against the log as it is now."""
+        def edit(items):
+            for change in items:
+                if change.get(key) == value and not change.get("undone"):
+                    change["undone"] = True
+            items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": what, "undo_model": None, "undo_app": None, "undone": False})
+        self._update_changes(edit)
 
     def show_model(self, model):
         """Open the model's file in Finder or File Explorer, and return where it is. The log never stores the path."""
@@ -351,11 +410,7 @@ class Lab:
                 raise RuntimeError(f"The uninstaller finished, but {ctx['name']} is still in {where_apps_go(ctx)}.")
         else:
             job["log"].append(f"{ctx['name']} was already gone.")
-        with self._jobs_lock:
-            for change in logged:
-                change["undone"] = True
-            items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": f"Removed {ctx['name']} (undo).", "undo_model": None, "undo_app": None, "undone": False})
-            self._changes_path().write_text(json.dumps(items[-200:], indent=1), encoding="utf-8")
+        self._mark_undone("undo_app", app, f"Removed {ctx['name']} (undo).")
         job["log"].append(f"Removed {ctx['name']}.")
         return {"app": app, "removed": True}
 
@@ -442,7 +497,7 @@ class Lab:
                 if job["status"] == "running" and job["action"] == action and job["args"] == args:
                     return copy.deepcopy(job)
             if not self._operation_lock.acquire(blocking=False):
-                raise Busy("Another lab operation is running. Wait before starting a new one.")
+                raise Busy("Another lab step is still running, in this tab or another one. Wait a few seconds, then try again.")
             job = {"id": uuid.uuid4().hex[:12], "action": action, "args": args, "status": "running",
                    "progress": None, "detail": "", "log": [], "result": None, "error": None, "diagnosis": None,
                    "warning": None}
@@ -553,11 +608,7 @@ class Lab:
             if not logged:
                 raise RuntimeError("Only a model this lab downloaded can be removed here.")
         ChatClient(self.settings.base_url, model).delete_model(model)
-        with self._jobs_lock:
-            for change in logged:
-                change["undone"] = True
-            items.append({"when": time.strftime("%Y-%m-%d %H:%M"), "what": f"Removed {model} (undo).", "undo_model": None, "undone": False})
-            self._changes_path().write_text(json.dumps(items[-200:], indent=1), encoding="utf-8")
+        self._mark_undone("undo_model", model, f"Removed {model} (undo).")
         job["log"].append(f"Removed {model}.")
         return {"model": model, "removed": True}
 
@@ -951,8 +1002,8 @@ class Lab:
         tags = rt["lab_models"]
         return {"models": [{"name": m, "about": self.allowed[m]["about"], "command": f"{cli} run {m}"} for m in tags],
                 "starting_model": self._agent_model(tags),
-                "launcher": "Start Lab Helper.command" if platform.system() == "Darwin" else "Start Lab Helper.bat",
-                "folder": str(ROOT), "running": rt["running"], "installed": rt["installed"]}
+                "launcher": start_again()[0],
+                "folder": str(ROOT.parent), "running": rt["running"], "installed": rt["installed"]}
 
     def start_talk(self, model, messages, context_tokens=4096, fair=False):
         """One reply from a chosen model, built up piece by piece. The conversation lives in the page and is never saved.
@@ -976,7 +1027,7 @@ class Lab:
         if model not in self.runtime_state()["lab_models"]:
             raise BadRequest(f"{model} isn't on this laptop yet. Download it first.")
         if not self._operation_lock.acquire(blocking=False):
-            raise Busy("Another lab operation is running. Wait for it to finish first.")
+            raise Busy("Another lab step is still running, in this tab or another one. Wait for it to finish, then try again.")
         talk = {"id": uuid.uuid4().hex[:12], "model": model, "status": "running", "text": "", "stop": False, "error": None, "flagged": False, "cut_off": False,
                 "ttft_s": None, "tps": None, "tokens": None, "prompt_tokens": None, "load_s": None, "seconds": None, "context_tokens": context_tokens}
         with self._jobs_lock:
@@ -1372,6 +1423,15 @@ class LabServer(ThreadingHTTPServer):
     # One page load opens about 15 connections at once. The default queue of 5 can drop one, and a dropped app.js leaves the page dead.
     request_queue_size = 128
     daemon_threads = True
+    # On Windows, SO_REUSEADDR lets a second program open a port that is already in use, so two labs could answer
+    # on 8765 and a page could reach the wrong one. Claim the port exclusively there; a second lab moves to 8766.
+    allow_reuse_address = os.name != "nt"
+
+    def server_bind(self):
+        if os.name == "nt":
+            import socket
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
 
 
 def create_server(lab, token, port=8765):
@@ -1402,8 +1462,6 @@ def main(argv=None):
     url = f"http://127.0.0.1:{server.server_address[1]}/#t={token}"
     print("Local AI Lab helper is running on this laptop only.", flush=True)
     print("Keep this window open. Nothing changes on your laptop until you approve a step.", flush=True)
-    if platform.system() == "Windows":
-        print("Windows has not yet been validated on a physical device.", flush=True)
     print(f"Open this private launch link (do not share its token):\n  {url}\n", flush=True)
     if not args.no_browser:
         threading.Timer(0.5, webbrowser.open, (url,)).start()

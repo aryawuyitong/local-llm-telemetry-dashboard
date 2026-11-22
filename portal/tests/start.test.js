@@ -66,3 +66,46 @@ test('starting works without knowing the folder name: bash, a space, drag the fi
   assert.match(start.todo[1], /Drag Start Lab on Mac/);
   assert.match(start.todo[2], /Return/);
 });
+
+test('one download, two guides: each system gets its own steps for the same ZIP', () => {
+  assert.deepEqual(Object.keys(S.GUIDES), ['mac', 'windows']);
+  assert.deepEqual(S.WIN_STEPS.map(s => s.id), ['download', 'unzip', 'python', 'start', 'first-run', 'opened']);
+  for (const s of S.WIN_STEPS) {
+    assert.ok(s.title && s.say.length && s.done && s.mock, s.id);
+    assert.ok(s.other.length >= 2 && s.other.every(o => o[0] && o[1]), s.id);
+  }
+  // Never a way round Windows' protection either.
+  assert.doesNotMatch(JSON.stringify(S.WIN_STEPS), /Run anyway|More info|Smart App Control (off|setting)|disable|turn it off|Unblock|Set-ExecutionPolicy/i);
+});
+
+test('the guide opens on the visitor\'s system, and anything else gets the Mac guide with a switch', () => {
+  assert.equal(S.pickSystem('Win32'), 'windows');
+  assert.equal(S.pickSystem('Windows'), 'windows');
+  assert.equal(S.pickSystem('MacIntel'), 'mac');
+  assert.equal(S.pickSystem('Linux x86_64'), 'mac');
+  assert.equal(S.pickSystem(''), 'mac');
+});
+
+test('the Windows start file is the one the guide names, opens with Python, and never elevates', () => {
+  const text = fs.readFileSync(path.join(repo, S.WIN_LAUNCHER), 'utf8');
+  assert.match(text, /telemetry_agent\.helper/);
+  assert.doesNotMatch(text, /runas|Set-ExecutionPolicy|shell=True|urlopen|Invoke-WebRequest/i);
+  const page = fs.readFileSync(path.join(__dirname, '..', 'start.js'), 'utf8');
+  for (const words of ["First run: creating the lab's private Python environment in this folder.", 'This only adds a .venv folder in the agent folder. Delete that folder to undo it.']) {
+    assert.ok(text.includes(words) && page.includes(words), words);
+  }
+});
+
+test('Windows has one way in: a python line in PowerShell, with no .bat and no double-click to start', () => {
+  const url = 'https://github.com/aryawuyitong/local-llm-telemetry-dashboard/archive/refs/heads/main.zip';
+  const f = 'local-llm-telemetry-dashboard-main';
+  // Extract All puts the files one folder deeper, inside a folder with the same name.
+  assert.equal(S.winStartLine(url), `python "$HOME\\Downloads\\${f}\\${f}\\windows_set_up.py"`);
+  assert.ok(fs.existsSync(path.join(repo, S.WIN_LAUNCHER)));
+  assert.ok(!fs.readdirSync(repo).some(n => n.endsWith('.bat')));
+  const advice = JSON.stringify(S.WIN_STEPS);
+  assert.doesNotMatch(advice, /\.bat|Batch File|Start Lab on Windows/);
+  // The only double-clicks left open folders in step 2, never a start file.
+  assert.doesNotMatch(advice.replace(/Double-click that inner folder|Double-click it: the lab|I double-clicked the ZIP/g, ''), /double-click/i);
+  assert.doesNotMatch(advice, /Set-ExecutionPolicy|turn off Smart App Control/i);
+});

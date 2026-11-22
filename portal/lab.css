@@ -410,3 +410,16 @@ html[data-mode=lab] .results-intro { display: none; }
   58% { opacity: 1; transform: translate(150px, 81px); } 64%, 100% { opacity: 0; transform: translate(150px, 81px); } }
 @keyframes drag-path { 0% { opacity: 0; } 62% { opacity: 1; } 100% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .start .drag-chip { display: none; } .start .drag-path { animation: none; opacity: 1; } }
+
+/* Start guide: the Mac / Windows switch and the Windows drawings (title on the left, window buttons on the right). */
+.start .start-os { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
+.start .start-os [aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.start .mock.win { border-radius: 8px; }
+.start .mock.win .mock-bar span { margin-left: 0; flex: 1; }
+.start .mock.win .mock-bar em { font-style: normal; width: 18px; text-align: center; color: var(--muted); }
+.start .mock.win.dark .mock-bar em { color: #b9c5bf; }
+.start .mock-icon.py { width: 14px; height: 14px; border-radius: 3px; background: linear-gradient(135deg, #3f74a6 0 50%, #f2c94c 50% 100%); }
+.start .mock-menu { display: grid; width: max-content; min-width: 180px; margin: 4px 0 10px 46px; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow); }
+.start .mock-menu span { padding: 5px 10px; border-radius: 5px; }
+.start .mock-menu .pick { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.start .mock-hint { margin: 0; padding: 8px 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12.5px; }

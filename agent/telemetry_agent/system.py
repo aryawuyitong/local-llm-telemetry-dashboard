@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -24,9 +25,56 @@ def cpu_model() -> str:
             for line in Path("/proc/cpuinfo").read_text().splitlines():
                 if line.startswith("model name"):
                     return line.split(":", 1)[1].strip()
+        if system == "Windows":
+            # platform.processor() gives "Intel64 Family 6 Model 198 ..."; the registry has the name people know.
+            # Reading HKEY_LOCAL_MACHINE needs no administrator rights.
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0") as key:
+                name = " ".join(str(winreg.QueryValueEx(key, "ProcessorNameString")[0]).split())
+            if name:
+                return name
     except (OSError, subprocess.SubprocessError):
         pass
     return platform.processor() or platform.machine()
+
+
+# Names Windows gives built-in graphics that share system memory, even when the brand also makes separate cards:
+# "AMD Radeon(TM) Graphics" and "Intel(R) Arc(TM) Graphics" sit in the processor; "Radeon RX 7600" and "Arc A770" don't.
+_DEDICATED = re.compile(r"nvidia|geforce|quadro|rtx|radeon.*\b(rx|pro)\b|\barc\b.*\b[ab]\d{3}", re.I)
+GPU_UNCHECKED = "unchecked"
+
+
+def gpu_name() -> str | None:
+    """A read-only look for a dedicated graphics chip. Never installs or changes anything.
+    Returns the chip's name, None when the laptop says it has none, or GPU_UNCHECKED when the lookup itself failed."""
+    looked = False
+    smi = shutil.which("nvidia-smi")
+    if smi:
+        try:
+            out = subprocess.run([smi, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"], capture_output=True,
+                                 text=True, encoding="utf-8", errors="replace", timeout=5).stdout.strip().splitlines()
+            looked = True
+            if out:
+                name, _, mib = out[0].partition(",")
+                mib = mib.strip()
+                return f"{name.strip()} ({round(int(mib) / 1024)} GB)" if mib.isdigit() else name.strip()
+        except (OSError, subprocess.SubprocessError, ValueError):
+            pass
+    if platform.system() == "Windows":
+        try:
+            # Windows may print adapter names in a local code page; replace anything undecodable rather than fail.
+            result = subprocess.run(["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_VideoController).Name"],
+                                    capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=8)
+            if result.returncode == 0:
+                looked = True
+                names = [n.strip() for n in result.stdout.splitlines() if n.strip() and "basic" not in n.lower()]
+                dedicated = [n for n in names if _DEDICATED.search(n)]
+                if dedicated or names:
+                    return (dedicated or names)[0]
+        except (OSError, subprocess.SubprocessError, ValueError):
+            pass
+        return None if looked else GPU_UNCHECKED
+    return None
 
 
 def os_name() -> str:
@@ -55,6 +103,7 @@ def hardware_info(models_dir: Path) -> dict:
     disk = shutil.disk_usage(disk_path)
     arch = platform.machine().lower()
     apple_silicon = platform.system() == "Darwin" and arch in ("arm64", "aarch64")
+    gpu = None if apple_silicon else gpu_name()
     return {
         "os": os_name(),
         "os_version": os_version(),
@@ -65,11 +114,14 @@ def hardware_info(models_dir: Path) -> dict:
         "total_ram_gb": round(vm.total / GB, 1),
         "available_ram_gb": round(vm.available / GB, 1),
         "free_disk_gb": round(disk.free / GB, 1),
-        "gpu": "Apple GPU (Metal, shares system RAM)" if apple_silicon else "not detected (CPU inference assumed)",
+        "gpu": ("Apple GPU (Metal, shares system RAM)" if apple_silicon else
+                "couldn't check (Windows didn't answer the graphics lookup)" if gpu == GPU_UNCHECKED else
+                (gpu or "not detected (CPU inference assumed)")),
         "python": sys.version.split()[0],
         "running_as_admin": is_admin(),
-        "platform_validation": "Windows support is implemented but has not been verified on a physical Windows laptop.",
-        "gpu_detection": "Apple unified-memory capability inferred from OS/architecture; other GPU availability is unknown.",
+        "platform_validation": "Checked on a physical Windows 11 laptop (Nov 14, 2026): setup, first reply and benchmark.",
+        "gpu_detection": ("Apple unified-memory capability inferred from OS/architecture." if apple_silicon else
+                          "Graphics chip name read from nvidia-smi or Windows; Ollama decides whether it uses it."),
     }
 
 
