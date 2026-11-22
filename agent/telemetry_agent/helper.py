@@ -1423,6 +1423,15 @@ class LabServer(ThreadingHTTPServer):
     # One page load opens about 15 connections at once. The default queue of 5 can drop one, and a dropped app.js leaves the page dead.
     request_queue_size = 128
     daemon_threads = True
+    # On Windows, SO_REUSEADDR lets a second program open a port that is already in use, so two labs could answer
+    # on 8765 and a page could reach the wrong one. Claim the port exclusively there; a second lab moves to 8766.
+    allow_reuse_address = os.name != "nt"
+
+    def server_bind(self):
+        if os.name == "nt":
+            import socket
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
 
 
 def create_server(lab, token, port=8765):

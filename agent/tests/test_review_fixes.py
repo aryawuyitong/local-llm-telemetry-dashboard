@@ -14,6 +14,24 @@ from telemetry_agent.config import ROOT, Settings
 AGENT = Path(__file__).resolve().parents[1]
 
 
+class OnePortPerLab(unittest.TestCase):
+    def test_a_second_lab_never_shares_a_port_with_the_first(self):
+        # On Windows a plain HTTP server can open a port another program already has, and pages reach the wrong lab.
+        import socket
+        with socket.socket() as busy:
+            busy.bind(("127.0.0.1", 0))
+            busy.listen()
+            port = busy.getsockname()[1]
+            first = helper.create_server(object(), "t", port)
+            second = helper.create_server(object(), "t", port)
+            try:
+                ports = {port, first.server_address[1], second.server_address[1]}
+                self.assertEqual(len(ports), 3)
+            finally:
+                first.server_close()
+                second.server_close()
+
+
 class ChangesLog(unittest.TestCase):
     def test_two_helper_processes_never_lose_each_others_entries(self):
         with tempfile.TemporaryDirectory() as tmp:
